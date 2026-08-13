@@ -1,4 +1,4 @@
-package io.github.kevinmitsi.animalesperdidos;
+package io.github.KevinMitsi.animalesperdidos;
 
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
@@ -7,7 +7,7 @@ import com.tngtech.archunit.lang.ArchRule;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
-@AnalyzeClasses(packages = "io.github.kevinmitsi.animalesperdidos", importOptions = ImportOption.DoNotIncludeTests.class)
+@AnalyzeClasses(packages = "io.github.KevinMitsi.animalesperdidos", importOptions = ImportOption.DoNotIncludeTests.class)
 class ArchitectureTest {
 
     @ArchTest

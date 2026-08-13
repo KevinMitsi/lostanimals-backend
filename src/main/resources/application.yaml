@@ -14,10 +14,23 @@ spring:
   webflux:
     multipart:
       max-in-memory-size: 8MB
+    problemdetails:
+      enabled: true
   codec:
     max-in-memory-size: 8MB
 
 app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:local-development-secret-change-me-32-bytes-minimum}
+      issuer: ${JWT_ISSUER:animales-perdidos-colombia}
+      ttl: ${JWT_TTL:PT1H}
+  cloudflare:
+    turnstile:
+      enabled: ${CLOUDFLARE_TURNSTILE_ENABLED:false}
+      secret-key: ${CLOUDFLARE_TURNSTILE_SECRET:}
+      expected-hostname: ${CLOUDFLARE_EXPECTED_HOSTNAME:}
+      trust-connecting-ip: ${CLOUDFLARE_TRUST_CONNECTING_IP:false}
   storage:
     s3:
       bucket: ${S3_BUCKET:animales-perdidos-dev}
@@ -25,3 +38,7 @@ app:
   notifications:
     email:
       enabled: ${EMAIL_NOTIFICATIONS_ENABLED:false}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html

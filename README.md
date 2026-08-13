@@ -20,6 +20,9 @@ domain (reglas y modelos Java puros)
 - `infrastructure.adapter.persistence`: PostgreSQL/PostGIS mediante R2DBC.
 - `infrastructure.adapter.storage`: implementación S3 de `ImageStoragePort`. Cambiar S3 por otro proveedor solo requiere otro adaptador.
 - `infrastructure.adapter.notification`: JavaMail o logging detrás de `NotificationPort`. Cambiar la librería de correo no modifica el caso de uso.
+- `infrastructure.adapter.security`: BCrypt y Nimbus JWT detrás de puertos de aplicación.
+- `infrastructure.adapter.cloudflare`: validación reactiva de Turnstile detrás de `BotVerificationPort`.
+- `infrastructure.adapter.persistence.entity`: entidades de persistencia separadas del modelo de dominio; MapStruct realiza la conversión.
 - `infrastructure.config`: composición de dependencias (el único lugar que construye el servicio de aplicación).
 
 Las fronteras asíncronas usan `CompletionStage`, parte de Java 21. Reactor queda limitado a los adaptadores WebFlux/R2DBC.
@@ -40,6 +43,10 @@ DB_PASSWORD=postgres
 S3_BUCKET=animales-perdidos-dev
 AWS_REGION=us-east-1
 EMAIL_NOTIFICATIONS_ENABLED=false
+JWT_SECRET=<mínimo 32 bytes aleatorios>
+CLOUDFLARE_TURNSTILE_ENABLED=true
+CLOUDFLARE_TURNSTILE_SECRET=<secret del widget>
+CLOUDFLARE_EXPECTED_HOSTNAME=app.example.com
 ```
 
 Flyway crea el esquema, habilita PostGIS y carga Armenia junto con cinco barrios iniciales. Antes de producción se debe reemplazar esa semilla mínima por el catálogo oficial completo.
@@ -49,15 +56,25 @@ Flyway crea el esquema, habilita PostGIS y carga Armenia junto con cinco barrios
 .\gradlew.bat bootRun
 ```
 
-## Endpoint inicial
+## Autenticación y APIs
+
+- `POST /api/v1/auth/register`: público; registra correo, contraseña, celular y cédula después de validar Turnstile.
+- `POST /api/v1/auth/login`: público; devuelve un JWT Bearer.
+- `POST /api/v1/lost-pet-reports`: requiere `Authorization: Bearer <jwt>`.
+- OpenAPI JSON: `/v3/api-docs`.
+- Swagger UI: `/swagger-ui.html`.
+
+Las contraseñas se procesan con BCrypt de coste 12 en `boundedElastic`, de modo que el cálculo intensivo no bloquea los event loops de WebFlux. Solo el hash se almacena. Correo, celular y cédula tienen restricciones únicas en PostgreSQL; el correo se normaliza en minúsculas y también posee índice único sobre `lower(email)`.
+
+## Reportes de mascotas
 
 `POST /api/v1/lost-pet-reports`, tipo `multipart/form-data`:
 
-- encabezado temporal `X-Owner-Id`: UUID del usuario autenticado;
+- encabezado `Authorization: Bearer <jwt>`; el dueño se obtiene del claim firmado `sub`;
 - parte `metadata`: JSON con `petName`, `species`, `description`, `disappearedAt`, `latitude`, `longitude` y `neighborhoodId`;
 - una o más partes `images` (máximo cinco).
 
-`X-Owner-Id` es únicamente un contrato provisional de esta primera vertical. Al implementar autenticación, el Controller debe obtener el usuario del principal JWT y nunca confiar en un identificador enviado por el cliente.
+La configuración de Turnstile, WAF, rate limiting y aislamiento del origen está en [docs/CLOUDFLARE.md](docs/CLOUDFLARE.md).
 
 ## Decisiones de integridad
 
@@ -67,4 +84,4 @@ Flyway crea el esquema, habilita PostGIS y carga Armenia junto con cinco barrios
 - Si persiste el reporte falla, el caso de uso compensa eliminando de S3 las imágenes subidas.
 - Los datos de contacto están separados y no aparecen en el contrato público.
 
-La siguiente vertical recomendada es registro/autenticación y consentimiento de tratamiento de datos; después, avistamientos con detección espacio-temporal y búsqueda por radio PostGIS.
+La siguiente vertical recomendada es recuperación/verificación de correo y contraseña; después, avistamientos con detección espacio-temporal y búsqueda por radio PostGIS.

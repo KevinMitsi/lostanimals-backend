@@ -1,0 +1,86 @@
+package io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.persistence;
+
+import io.github.KevinMitsi.animalesperdidos.application.exception.DuplicateUserData;
+import io.github.KevinMitsi.animalesperdidos.application.port.out.UserRepository;
+import io.github.KevinMitsi.animalesperdidos.domain.model.User;
+import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.persistence.entity.UserEntity;
+import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.persistence.mapper.UserPersistenceMapper;
+import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.r2dbc.core.DatabaseClient;
+import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Mono;
+
+import java.time.Instant;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.CompletionStage;
+
+@Repository
+@RequiredArgsConstructor
+public class R2dbcUserRepository implements UserRepository {
+    private final DatabaseClient databaseClient;
+    private final UserPersistenceMapper mapper;
+
+    @Override
+    public CompletionStage<Boolean> existsByEmail(String email) {
+        return exists("SELECT EXISTS(SELECT 1 FROM app_user WHERE lower(email) = lower(:value)) AS present", email);
+    }
+
+    @Override
+    public CompletionStage<Boolean> existsByPhone(String phone) {
+        return exists("SELECT EXISTS(SELECT 1 FROM app_user WHERE phone = :value) AS present", phone);
+    }
+
+    @Override
+    public CompletionStage<Boolean> existsByDocumentNumber(String documentNumber) {
+        return exists("SELECT EXISTS(SELECT 1 FROM app_user WHERE document_number = :value) AS present", documentNumber);
+    }
+
+    @Override
+    public CompletionStage<Optional<User>> findByEmail(String email) {
+        return databaseClient.sql("""
+                        SELECT id, email, password_hash, phone, document_number, display_name,
+                               habeas_data_accepted_at, created_at
+                        FROM app_user WHERE lower(email) = lower(:email)
+                        """)
+                .bind("email", email)
+                .map((row, metadata) -> new UserEntity(
+                        row.get("id", UUID.class), row.get("email", String.class),
+                        row.get("password_hash", String.class), row.get("phone", String.class),
+                        row.get("document_number", String.class), row.get("display_name", String.class),
+                        row.get("habeas_data_accepted_at", Instant.class), row.get("created_at", Instant.class)))
+                .one().map(mapper::toDomain).map(Optional::of).defaultIfEmpty(Optional.empty()).toFuture();
+    }
+
+    @Override
+    public CompletionStage<User> save(User user) {
+        UserEntity entity = mapper.toEntity(user);
+        return databaseClient.sql("""
+                        INSERT INTO app_user
+                            (id, email, password_hash, phone, document_number, display_name,
+                             habeas_data_accepted_at, created_at)
+                        VALUES (:id, :email, :passwordHash, :phone, :documentNumber, :displayName,
+                                :acceptedAt, :createdAt)
+                        """)
+                .bind("id", entity.id())
+                .bind("email", entity.email().toLowerCase(Locale.ROOT))
+                .bind("passwordHash", entity.passwordHash())
+                .bind("phone", entity.phone())
+                .bind("documentNumber", entity.documentNumber())
+                .bind("displayName", entity.displayName())
+                .bind("acceptedAt", entity.habeasDataAcceptedAt())
+                .bind("createdAt", entity.createdAt())
+                .fetch().rowsUpdated().thenReturn(user)
+                .onErrorMap(DataIntegrityViolationException.class,
+                        ignored -> new DuplicateUserData("email, phone or document number"))
+                .toFuture();
+    }
+
+    private CompletionStage<Boolean> exists(String sql, String value) {
+        return databaseClient.sql(sql).bind("value", value)
+                .map((row, metadata) -> Boolean.TRUE.equals(row.get("present", Boolean.class)))
+                .one().defaultIfEmpty(false).toFuture();
+    }
+}
