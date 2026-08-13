@@ -1,18 +1,8 @@
 package io.github.KevinMitsi.animalesperdidos.infrastructure.config;
 
-import io.github.KevinMitsi.animalesperdidos.application.port.in.ReportLostPetUseCase;
-import io.github.KevinMitsi.animalesperdidos.application.port.in.RegisterUserUseCase;
-import io.github.KevinMitsi.animalesperdidos.application.port.in.AuthenticateUserUseCase;
-import io.github.KevinMitsi.animalesperdidos.application.port.out.BotVerificationPort;
-import io.github.KevinMitsi.animalesperdidos.application.port.out.ImageStoragePort;
-import io.github.KevinMitsi.animalesperdidos.application.port.out.LostPetReportRepository;
-import io.github.KevinMitsi.animalesperdidos.application.port.out.NotificationPort;
-import io.github.KevinMitsi.animalesperdidos.application.port.out.PasswordHasherPort;
-import io.github.KevinMitsi.animalesperdidos.application.port.out.TokenIssuerPort;
-import io.github.KevinMitsi.animalesperdidos.application.port.out.UserRepository;
-import io.github.KevinMitsi.animalesperdidos.application.service.AuthenticateUserService;
-import io.github.KevinMitsi.animalesperdidos.application.service.ReportLostPetService;
-import io.github.KevinMitsi.animalesperdidos.application.service.RegisterUserService;
+import io.github.KevinMitsi.animalesperdidos.application.port.in.*;
+import io.github.KevinMitsi.animalesperdidos.application.port.out.*;
+import io.github.KevinMitsi.animalesperdidos.application.service.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -36,13 +26,36 @@ public class ApplicationConfiguration {
 
     @Bean
     RegisterUserUseCase registerUserUseCase(UserRepository repository, PasswordHasherPort passwordHasher,
-                                             BotVerificationPort botVerification, Clock clock) {
-        return new RegisterUserService(repository, passwordHasher, botVerification, clock);
+                                             BotVerificationPort botVerification, Clock clock,
+                                             AccountTokenRepository accountTokens, OpaqueTokenPort opaqueTokens,
+                                             AccountNotificationPort notifications, SecurityProperties properties) {
+        return new RegisterUserService(repository, passwordHasher, botVerification, clock, accountTokens,
+                opaqueTokens, notifications, properties.getEmailVerificationTtl());
     }
 
     @Bean
     AuthenticateUserUseCase authenticateUserUseCase(UserRepository repository, PasswordHasherPort passwordHasher,
-                                                     TokenIssuerPort tokenIssuer, BotVerificationPort botVerification) {
-        return new AuthenticateUserService(repository, passwordHasher, tokenIssuer, botVerification);
+                                                     TokenIssuerPort tokenIssuer, BotVerificationPort botVerification,
+                                                     RefreshSessionRepository sessions, OpaqueTokenPort opaqueTokens,
+                                                     Clock clock, SecurityProperties properties) {
+        return new AuthenticateUserService(repository, passwordHasher, tokenIssuer, botVerification,
+                sessions, opaqueTokens, clock, properties.getRefreshTtl());
+    }
+
+    @Bean
+    AccountLifecycleService accountLifecycleService(UserRepository users, AccountTokenRepository tokens,
+                                                     RefreshSessionRepository sessions, OpaqueTokenPort opaqueTokens,
+                                                     PasswordHasherPort passwordHasher, AccountNotificationPort notifications,
+                                                     Clock clock, SecurityProperties properties,
+                                                     BotVerificationPort botVerification) {
+        return new AccountLifecycleService(users, tokens, sessions, opaqueTokens, passwordHasher, notifications,
+                clock, properties.getEmailVerificationTtl(), properties.getPasswordResetTtl(), botVerification);
+    }
+
+    @Bean
+    RefreshSessionUseCase refreshSessionUseCase(RefreshSessionRepository sessions, UserRepository users,
+                                                 OpaqueTokenPort opaqueTokens, TokenIssuerPort accessTokens,
+                                                 Clock clock, SecurityProperties properties) {
+        return new RefreshSessionService(sessions, users, opaqueTokens, accessTokens, clock, properties.getRefreshTtl());
     }
 }

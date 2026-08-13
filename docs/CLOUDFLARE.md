@@ -5,7 +5,11 @@ La integración tiene dos capas distintas. Turnstile se valida desde la aplicaci
 ## 1. Turnstile para registro y login
 
 1. Crear un widget Turnstile en Cloudflare y restringirlo a los hostnames de cada ambiente.
-2. En el frontend, renderizar el widget con `action: "register"` para registro y `action: "login"` para login.
+2. En el frontend, renderizar el widget con estas acciones según el formulario:
+   - `register` para registro;
+   - `login` para inicio de sesión;
+   - `resend-verification` para reenvío de verificación;
+   - `password-recovery` para recuperación de contraseña.
 3. Enviar el token generado en `turnstileToken`. Es de un solo uso y expira aproximadamente en cinco minutos.
 4. Configurar el backend:
 

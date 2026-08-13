@@ -4,6 +4,8 @@ import io.github.KevinMitsi.animalesperdidos.application.exception.BusinessRuleV
 import io.github.KevinMitsi.animalesperdidos.application.exception.BotVerificationFailed;
 import io.github.KevinMitsi.animalesperdidos.application.exception.DuplicateUserData;
 import io.github.KevinMitsi.animalesperdidos.application.exception.InvalidCredentials;
+import io.github.KevinMitsi.animalesperdidos.application.exception.InvalidOrExpiredToken;
+import io.github.KevinMitsi.animalesperdidos.application.exception.EmailNotVerified;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.support.WebExchangeBindException;
@@ -23,6 +25,16 @@ public class ApiExceptionHandler {
     @ExceptionHandler(InvalidCredentials.class)
     ProblemDetail credentials(InvalidCredentials exception) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
+    }
+
+    @ExceptionHandler(EmailNotVerified.class)
+    ProblemDetail emailNotVerified(EmailNotVerified exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, exception.getMessage());
+    }
+
+    @ExceptionHandler(InvalidOrExpiredToken.class)
+    ProblemDetail invalidToken(InvalidOrExpiredToken exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage());
     }
 
     @ExceptionHandler(BotVerificationFailed.class)
@@ -55,6 +67,8 @@ public class ApiExceptionHandler {
         if (cause instanceof DuplicateUserData duplicate) return duplicate(duplicate);
         if (cause instanceof InvalidCredentials credentials) return credentials(credentials);
         if (cause instanceof BotVerificationFailed bot) return bot(bot);
+        if (cause instanceof EmailNotVerified email) return emailNotVerified(email);
+        if (cause instanceof InvalidOrExpiredToken token) return invalidToken(token);
         return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "The operation could not be completed");
     }
 }

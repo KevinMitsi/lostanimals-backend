@@ -25,6 +25,9 @@ app:
       secret: ${JWT_SECRET:local-development-secret-change-me-32-bytes-minimum}
       issuer: ${JWT_ISSUER:animales-perdidos-colombia}
       ttl: ${JWT_TTL:PT1H}
+      refresh-ttl: ${REFRESH_TOKEN_TTL:P30D}
+      email-verification-ttl: ${EMAIL_VERIFICATION_TTL:PT24H}
+      password-reset-ttl: ${PASSWORD_RESET_TTL:PT30M}
   cloudflare:
     turnstile:
       enabled: ${CLOUDFLARE_TURNSTILE_ENABLED:false}
@@ -36,6 +39,7 @@ app:
       bucket: ${S3_BUCKET:animales-perdidos-dev}
       region: ${AWS_REGION:us-east-1}
   notifications:
+    frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
     email:
       enabled: ${EMAIL_NOTIFICATIONS_ENABLED:false}
 

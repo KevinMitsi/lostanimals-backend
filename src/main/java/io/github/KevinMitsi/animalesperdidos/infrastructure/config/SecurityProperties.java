@@ -13,5 +13,8 @@ public class SecurityProperties {
     private String secret;
     private String issuer = "animales-perdidos-colombia";
     private Duration ttl = Duration.ofHours(1);
+    private Duration refreshTtl = Duration.ofDays(30);
+    private Duration emailVerificationTtl = Duration.ofHours(24);
+    private Duration passwordResetTtl = Duration.ofMinutes(30);
 
 }

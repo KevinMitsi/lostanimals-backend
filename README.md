@@ -60,11 +60,16 @@ Flyway crea el esquema, habilita PostGIS y carga Armenia junto con cinco barrios
 
 - `POST /api/v1/auth/register`: público; registra correo, contraseña, celular y cédula después de validar Turnstile.
 - `POST /api/v1/auth/login`: público; devuelve un JWT Bearer.
+- `POST /api/v1/auth/verify-email` y `/resend-verification`: ciclo de verificación.
+- `POST /api/v1/auth/forgot-password` y `/reset-password`: recuperación segura.
+- `POST /api/v1/auth/refresh` y `/logout`: rotación y revocación de sesiones.
 - `POST /api/v1/lost-pet-reports`: requiere `Authorization: Bearer <jwt>`.
 - OpenAPI JSON: `/v3/api-docs`.
 - Swagger UI: `/swagger-ui.html`.
 
 Las contraseñas se procesan con BCrypt de coste 12 en `boundedElastic`, de modo que el cálculo intensivo no bloquea los event loops de WebFlux. Solo el hash se almacena. Correo, celular y cédula tienen restricciones únicas en PostgreSQL; el correo se normaliza en minúsculas y también posee índice único sobre `lower(email)`.
+
+La implementación y contratos de la primera fase están descritos en [docs/FASE_1_IDENTIDAD.md](docs/FASE_1_IDENTIDAD.md). El orden completo del producto vive en [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Reportes de mascotas
 

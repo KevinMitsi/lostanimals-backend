@@ -40,18 +40,30 @@ public class R2dbcUserRepository implements UserRepository {
 
     @Override
     public CompletionStage<Optional<User>> findByEmail(String email) {
+        return selectUser("WHERE lower(email) = lower(:value)", email)
+                .map(Optional::of).defaultIfEmpty(Optional.empty()).toFuture();
+    }
+
+    @Override
+    public CompletionStage<Optional<User>> findById(UUID id) {
+        return selectUser("WHERE id = :value", id)
+                .map(Optional::of).defaultIfEmpty(Optional.empty()).toFuture();
+    }
+
+    private <T> Mono<User> selectUser(String where, T value) {
         return databaseClient.sql("""
                         SELECT id, email, password_hash, phone, document_number, display_name,
-                               habeas_data_accepted_at, created_at
-                        FROM app_user WHERE lower(email) = lower(:email)
-                        """)
-                .bind("email", email)
+                               habeas_data_accepted_at, email_verified_at, created_at
+                        FROM app_user %s
+                        """.formatted(where))
+                .bind("value", value)
                 .map((row, metadata) -> new UserEntity(
                         row.get("id", UUID.class), row.get("email", String.class),
                         row.get("password_hash", String.class), row.get("phone", String.class),
                         row.get("document_number", String.class), row.get("display_name", String.class),
-                        row.get("habeas_data_accepted_at", Instant.class), row.get("created_at", Instant.class)))
-                .one().map(mapper::toDomain).map(Optional::of).defaultIfEmpty(Optional.empty()).toFuture();
+                        row.get("habeas_data_accepted_at", Instant.class), row.get("email_verified_at", Instant.class),
+                        row.get("created_at", Instant.class)))
+                .one().map(mapper::toDomain);
     }
 
     @Override
@@ -75,6 +87,20 @@ public class R2dbcUserRepository implements UserRepository {
                 .fetch().rowsUpdated().thenReturn(user)
                 .onErrorMap(DataIntegrityViolationException.class,
                         ignored -> new DuplicateUserData("email, phone or document number"))
+                .toFuture();
+    }
+
+    @Override
+    public CompletionStage<User> update(User user) {
+        return databaseClient.sql("""
+                        UPDATE app_user SET password_hash = :passwordHash, email_verified_at = :emailVerifiedAt
+                        WHERE id = :id
+                        """)
+                .bind("passwordHash", user.passwordHash())
+                .bind("emailVerifiedAt", user.emailVerifiedAt() == null ? io.r2dbc.spi.Parameters.in(Instant.class) : user.emailVerifiedAt())
+                .bind("id", user.id())
+                .fetch().rowsUpdated()
+                .flatMap(rows -> rows == 1 ? Mono.just(user) : Mono.error(new IllegalStateException("User not found")))
                 .toFuture();
     }
 
