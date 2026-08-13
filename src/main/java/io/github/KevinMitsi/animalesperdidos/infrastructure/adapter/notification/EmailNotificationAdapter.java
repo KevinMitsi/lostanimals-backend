@@ -1,7 +1,7 @@
-package io.github.kevinmitsi.animalesperdidos.infrastructure.adapter.notification;
+package io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.notification;
 
-import io.github.kevinmitsi.animalesperdidos.application.port.out.NotificationPort;
-import io.github.kevinmitsi.animalesperdidos.domain.model.LostPetReport;
+import io.github.KevinMitsi.animalesperdidos.application.port.out.NotificationPort;
+import io.github.KevinMitsi.animalesperdidos.domain.model.LostPetReport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.mail.SimpleMailMessage;

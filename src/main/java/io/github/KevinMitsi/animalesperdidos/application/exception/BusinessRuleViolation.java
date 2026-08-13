@@ -1,4 +1,4 @@
-package io.github.kevinmitsi.animalesperdidos.application.exception;
+package io.github.KevinMitsi.animalesperdidos.application.exception;
 
 public class BusinessRuleViolation extends RuntimeException {
     public BusinessRuleViolation(String message) {

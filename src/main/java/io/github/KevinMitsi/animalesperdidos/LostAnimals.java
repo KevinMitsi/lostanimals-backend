@@ -1,12 +1,12 @@
-package io.github.kevinmitsi.animalesperdidos;
+package io.github.KevinMitsi.animalesperdidos;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class AnimalesPerdidosApplication {
+public class LostAnimals {
 
     public static void main(String[] args) {
-        SpringApplication.run(AnimalesPerdidosApplication.class, args);
+        SpringApplication.run(LostAnimals.class, args);
     }
 }

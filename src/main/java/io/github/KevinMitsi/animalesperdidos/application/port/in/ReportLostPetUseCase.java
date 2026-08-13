@@ -1,6 +1,6 @@
-package io.github.kevinmitsi.animalesperdidos.application.port.in;
+package io.github.KevinMitsi.animalesperdidos.application.port.in;
 
-import io.github.kevinmitsi.animalesperdidos.domain.model.Species;
+import io.github.KevinMitsi.animalesperdidos.domain.model.Species;
 
 import java.time.Instant;
 import java.util.List;

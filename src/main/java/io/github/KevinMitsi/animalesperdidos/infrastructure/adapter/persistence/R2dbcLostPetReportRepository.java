@@ -1,8 +1,8 @@
-package io.github.kevinmitsi.animalesperdidos.infrastructure.adapter.persistence;
+package io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.persistence;
 
-import io.github.kevinmitsi.animalesperdidos.application.port.out.LostPetReportRepository;
-import io.github.kevinmitsi.animalesperdidos.domain.model.LostPetReport;
-import io.github.kevinmitsi.animalesperdidos.domain.model.Species;
+import io.github.KevinMitsi.animalesperdidos.application.port.out.LostPetReportRepository;
+import io.github.KevinMitsi.animalesperdidos.domain.model.LostPetReport;
+import io.github.KevinMitsi.animalesperdidos.domain.model.Species;
 import lombok.RequiredArgsConstructor;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.stereotype.Repository;

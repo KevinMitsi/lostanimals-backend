@@ -1,5 +1,7 @@
-package io.github.kevinmitsi.animalesperdidos.infrastructure.config;
+package io.github.KevinMitsi.animalesperdidos.infrastructure.config;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,24 +22,11 @@ public class S3Configuration {
         return S3AsyncClient.builder().region(Region.of(properties.getRegion())).build();
     }
 
+    @Setter
+    @Getter
     public static class S3Properties {
         private String bucket;
         private String region = "us-east-1";
 
-        public String getBucket() {
-            return bucket;
-        }
-
-        public void setBucket(String bucket) {
-            this.bucket = bucket;
-        }
-
-        public String getRegion() {
-            return region;
-        }
-
-        public void setRegion(String region) {
-            this.region = region;
-        }
     }
 }

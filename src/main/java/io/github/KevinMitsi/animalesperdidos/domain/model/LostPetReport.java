@@ -1,4 +1,4 @@
-package io.github.kevinmitsi.animalesperdidos.domain.model;
+package io.github.KevinMitsi.animalesperdidos.domain.model;
 
 import java.time.Instant;
 import java.util.List;

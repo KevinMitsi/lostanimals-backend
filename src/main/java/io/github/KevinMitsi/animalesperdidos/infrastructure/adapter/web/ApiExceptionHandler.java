@@ -1,6 +1,6 @@
-package io.github.kevinmitsi.animalesperdidos.infrastructure.adapter.web;
+package io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web;
 
-import io.github.kevinmitsi.animalesperdidos.application.exception.BusinessRuleViolation;
+import io.github.KevinMitsi.animalesperdidos.application.exception.BusinessRuleViolation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.support.WebExchangeBindException;

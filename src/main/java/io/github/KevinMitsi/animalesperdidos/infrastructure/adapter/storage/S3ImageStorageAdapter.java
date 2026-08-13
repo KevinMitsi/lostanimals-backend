@@ -1,7 +1,7 @@
-package io.github.kevinmitsi.animalesperdidos.infrastructure.adapter.storage;
+package io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.storage;
 
-import io.github.kevinmitsi.animalesperdidos.application.port.out.ImageStoragePort;
-import io.github.kevinmitsi.animalesperdidos.infrastructure.config.S3Configuration.S3Properties;
+import io.github.KevinMitsi.animalesperdidos.application.port.out.ImageStoragePort;
+import io.github.KevinMitsi.animalesperdidos.infrastructure.config.S3Configuration.S3Properties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.core.async.AsyncRequestBody;

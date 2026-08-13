@@ -1,6 +1,6 @@
-package io.github.kevinmitsi.animalesperdidos.application.port.out;
+package io.github.KevinMitsi.animalesperdidos.application.port.out;
 
-import io.github.kevinmitsi.animalesperdidos.domain.model.LostPetReport;
+import io.github.KevinMitsi.animalesperdidos.domain.model.LostPetReport;
 
 import java.util.concurrent.CompletionStage;
 

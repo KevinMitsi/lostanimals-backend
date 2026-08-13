@@ -1,7 +1,7 @@
-package io.github.kevinmitsi.animalesperdidos.infrastructure.adapter.web;
+package io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web;
 
-import io.github.kevinmitsi.animalesperdidos.application.port.in.ReportLostPetUseCase;
-import io.github.kevinmitsi.animalesperdidos.domain.model.Species;
+import io.github.KevinMitsi.animalesperdidos.application.port.in.ReportLostPetUseCase;
+import io.github.KevinMitsi.animalesperdidos.domain.model.Species;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

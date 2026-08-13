@@ -1,4 +1,4 @@
-package io.github.kevinmitsi.animalesperdidos.domain.model;
+package io.github.KevinMitsi.animalesperdidos.domain.model;
 
 public enum Species {
     DOG, CAT, BIRD, OTHER

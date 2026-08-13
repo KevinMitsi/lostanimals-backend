@@ -1,4 +1,4 @@
-package io.github.kevinmitsi.animalesperdidos.application.port.out;
+package io.github.KevinMitsi.animalesperdidos.application.port.out;
 
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;

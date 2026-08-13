@@ -1,12 +1,12 @@
-package io.github.kevinmitsi.animalesperdidos.application.service;
+package io.github.KevinMitsi.animalesperdidos.application.service;
 
-import io.github.kevinmitsi.animalesperdidos.application.exception.BusinessRuleViolation;
-import io.github.kevinmitsi.animalesperdidos.application.port.in.ReportLostPetUseCase;
-import io.github.kevinmitsi.animalesperdidos.application.port.out.ImageStoragePort;
-import io.github.kevinmitsi.animalesperdidos.application.port.out.LostPetReportRepository;
-import io.github.kevinmitsi.animalesperdidos.application.port.out.NotificationPort;
-import io.github.kevinmitsi.animalesperdidos.domain.model.GeoPoint;
-import io.github.kevinmitsi.animalesperdidos.domain.model.LostPetReport;
+import io.github.KevinMitsi.animalesperdidos.application.exception.BusinessRuleViolation;
+import io.github.KevinMitsi.animalesperdidos.application.port.in.ReportLostPetUseCase;
+import io.github.KevinMitsi.animalesperdidos.application.port.out.ImageStoragePort;
+import io.github.KevinMitsi.animalesperdidos.application.port.out.LostPetReportRepository;
+import io.github.KevinMitsi.animalesperdidos.application.port.out.NotificationPort;
+import io.github.KevinMitsi.animalesperdidos.domain.model.GeoPoint;
+import io.github.KevinMitsi.animalesperdidos.domain.model.LostPetReport;
 
 import java.time.Clock;
 import java.time.Duration;
