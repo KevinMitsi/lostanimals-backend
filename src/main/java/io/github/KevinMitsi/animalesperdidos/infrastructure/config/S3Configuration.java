@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
 @Configuration
 public class S3Configuration {
@@ -20,6 +21,11 @@ public class S3Configuration {
     @Bean(destroyMethod = "close")
     S3AsyncClient s3AsyncClient(S3Properties properties) {
         return S3AsyncClient.builder().region(Region.of(properties.getRegion())).build();
+    }
+
+    @Bean(destroyMethod = "close")
+    S3Presigner s3Presigner(S3Properties properties) {
+        return S3Presigner.builder().region(Region.of(properties.getRegion())).build();
     }
 
     @Setter

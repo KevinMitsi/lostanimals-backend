@@ -71,6 +71,8 @@ Las contraseñas se procesan con BCrypt de coste 12 en `boundedElastic`, de modo
 
 La implementación y contratos de la primera fase están descritos en [docs/FASE_1_IDENTIDAD.md](docs/FASE_1_IDENTIDAD.md). El orden completo del producto vive en [docs/ROADMAP.md](docs/ROADMAP.md).
 
+La gestión completa de reportes, carga directa privada a S3, sanitización de imágenes y configuración CORS están en [docs/FASE_2_REPORTES.md](docs/FASE_2_REPORTES.md).
+
 ## Reportes de mascotas
 
 `POST /api/v1/lost-pet-reports`, tipo `multipart/form-data`:

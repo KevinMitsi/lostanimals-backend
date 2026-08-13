@@ -30,6 +30,12 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ReportLostPetServiceTest {
     private static final Instant NOW = Instant.parse("2026-08-13T12:00:00Z");
+    private static final UUID OWNER_ID = UUID.fromString("10000000-0000-0000-0000-000000000001");
+    private static final String CHECKSUM = java.util.Base64.getEncoder().encodeToString(new byte[32]);
+    private static final String IMAGE_KEY = "lost-pet-reports/staging/users/" + OWNER_ID + "/image-"
+            + "0".repeat(64) + ".jpg";
+    private static final String SANITIZED_KEY = "lost-pet-reports/users/" + OWNER_ID + "/clean-"
+            + "0".repeat(64) + ".jpg";
 
     @Mock LostPetReportRepository repository;
     @Mock ImageStoragePort storage;
@@ -47,7 +53,8 @@ class ReportLostPetServiceTest {
     void storesTheImageAndPersistsTheReport() {
         when(repository.existsActiveDuplicate(any(), any(), anyString(), any())).thenReturn(completed(false));
         when(repository.countCreatedByOwnerSince(any(), any())).thenReturn(completed(0L));
-        when(storage.store(any(), anyString(), anyString(), any())).thenReturn(completed("lost-pet-reports/image.jpg"));
+        when(storage.sanitize(OWNER_ID, IMAGE_KEY)).thenReturn(completed(
+                new ImageStoragePort.StoredObject(SANITIZED_KEY, "image/jpeg", 1024, CHECKSUM)));
         when(repository.save(any())).thenAnswer(invocation -> completed(invocation.getArgument(0)));
         when(notification.reportCreated(any())).thenReturn(completed(null));
 
@@ -55,7 +62,7 @@ class ReportLostPetServiceTest {
 
         verify(repository).save(reportCaptor.capture());
         assertNotNull(result.reportId());
-        assertEquals(of("lost-pet-reports/image.jpg"), reportCaptor.getValue().imageKeys());
+        assertEquals(of(SANITIZED_KEY), reportCaptor.getValue().images().stream().map(image -> image.objectKey()).toList());
         assertEquals("Luna", reportCaptor.getValue().petName());
     }
 
@@ -73,9 +80,9 @@ class ReportLostPetServiceTest {
     }
 
     private static ReportLostPetUseCase.Command command() {
-        return new ReportLostPetUseCase.Command(UUID.randomUUID(), "Luna", Species.DOG, "Collar rojo",
+        return new ReportLostPetUseCase.Command(OWNER_ID, "Luna", Species.DOG, "Collar rojo",
                 NOW.minusSeconds(3600), 4.5339, -75.6811, UUID.randomUUID(),
-                of(new ReportLostPetUseCase.Image("luna.jpg", "image/jpeg", new byte[]{1, 2, 3})));
+                of(IMAGE_KEY));
     }
 
     private static <T> CompletableFuture<T> completed(T value) {

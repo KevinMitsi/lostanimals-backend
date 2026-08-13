@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.List;
 
 @Schema(description = "Lost-pet report metadata; send as the JSON metadata part of multipart/form-data")
 public record CreateLostPetReportRequest(
@@ -19,6 +20,8 @@ public record CreateLostPetReportRequest(
         @NotNull @PastOrPresent Instant disappearedAt,
         @DecimalMin("-90.0") @DecimalMax("90.0") double latitude,
         @DecimalMin("-180.0") @DecimalMax("180.0") double longitude,
-        @NotNull UUID neighborhoodId
+        @NotNull UUID neighborhoodId,
+        @NotNull @Size(min = 1, max = 5) List<@NotBlank @Size(max = 1024) String> imageKeys
 ) {
+    public CreateLostPetReportRequest { imageKeys = imageKeys == null ? null : List.copyOf(imageKeys); }
 }

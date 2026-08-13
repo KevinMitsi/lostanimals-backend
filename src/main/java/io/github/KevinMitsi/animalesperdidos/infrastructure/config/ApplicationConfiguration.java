@@ -25,6 +25,23 @@ public class ApplicationConfiguration {
     }
 
     @Bean
+    PrepareReportImageUploadUseCase prepareReportImageUploadUseCase(ImageStoragePort storage) {
+        return new PrepareReportImageUploadService(storage);
+    }
+
+    @Bean
+    QueryLostPetReportsUseCase queryLostPetReportsUseCase(LostPetReportRepository repository,
+                                                           ImageStoragePort storage) {
+        return new QueryLostPetReportsService(repository, storage);
+    }
+
+    @Bean
+    ManageLostPetReportUseCase manageLostPetReportUseCase(LostPetReportRepository repository,
+                                                           ImageStoragePort storage, Clock clock) {
+        return new ManageLostPetReportService(repository, storage, clock);
+    }
+
+    @Bean
     RegisterUserUseCase registerUserUseCase(UserRepository repository, PasswordHasherPort passwordHasher,
                                              BotVerificationPort botVerification, Clock clock,
                                              AccountTokenRepository accountTokens, OpaqueTokenPort opaqueTokens,

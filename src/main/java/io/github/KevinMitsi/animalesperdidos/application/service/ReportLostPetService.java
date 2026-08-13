@@ -11,7 +11,6 @@ import io.github.KevinMitsi.animalesperdidos.domain.model.LostPetReport;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -37,7 +36,7 @@ public final class ReportLostPetService implements ReportLostPetUseCase {
     @Override
     public CompletionStage<Result> report(Command command) {
         Instant now = clock.instant();
-        validateImages(command.images());
+        validateImageKeys(command.imageKeys());
         if (command.disappearedAt().isAfter(now)) {
             throw new BusinessRuleViolation("Disappearance time cannot be in the future");
         }
@@ -49,25 +48,21 @@ public final class ReportLostPetService implements ReportLostPetUseCase {
 
         return duplicate.thenCombine(dailyCount, Checks::new)
                 .thenCompose(this::enforcePublicationRules)
-                .thenCompose(ignored -> storeAndPersist(command, now));
+                .thenCompose(ignored -> sanitizeUploadedImages(command.ownerId(), command.imageKeys()))
+                .thenCompose(keys -> persist(command, keys, now));
     }
 
-    private CompletionStage<Result> storeAndPersist(Command command, Instant now) {
+    private CompletionStage<Result> persist(Command command, List<String> sanitizedKeys, Instant now) {
         UUID reportId = UUID.randomUUID();
-        List<CompletionStage<String>> uploads = command.images().stream()
-                .map(image -> imageStorage.store(reportId, image.fileName(), image.contentType(), image.content()))
-                .toList();
-
-        return sequence(uploads).thenCompose(keys -> {
-            LostPetReport report = LostPetReport.create(reportId, command.ownerId(), command.petName(),
-                    command.species(), command.description(), command.disappearedAt(),
-                    new GeoPoint(command.latitude(), command.longitude()), command.neighborhoodId(), keys, now);
-            CompletionStage<LostPetReport> persisted = repository.save(report)
-                    .exceptionallyCompose(error -> deleteUploadedImages(keys).thenCompose(ignored -> failed(error)));
-            return persisted.thenCompose(saved -> notification.reportCreated(saved)
-                    .exceptionally(ignored -> null)
-                    .thenApply(ignored -> new Result(saved.id())));
-        });
+        LostPetReport report = LostPetReport.create(reportId, command.ownerId(), command.petName(),
+                command.species(), command.description(), command.disappearedAt(),
+                new GeoPoint(command.latitude(), command.longitude()), command.neighborhoodId(),
+                sanitizedKeys, now);
+        return repository.save(report)
+                .exceptionallyCompose(error -> deleteImages(sanitizedKeys).thenCompose(ignored -> failed(error)))
+                .thenCompose(saved -> notification.reportCreated(saved)
+                .exceptionally(ignored -> null)
+                .thenApply(ignored -> new Result(saved.id())));
     }
 
     private CompletionStage<Void> enforcePublicationRules(Checks checks) {
@@ -80,27 +75,49 @@ public final class ReportLostPetService implements ReportLostPetUseCase {
         return CompletableFuture.completedFuture(null);
     }
 
-    private static void validateImages(List<Image> images) {
-        if (images == null || images.isEmpty() || images.size() > 5) {
+    private static void validateImageKeys(List<String> keys) {
+        if (keys == null || keys.isEmpty() || keys.size() > 5) {
             throw new BusinessRuleViolation("A report must contain between 1 and 5 images");
         }
-        if (images.stream().anyMatch(image -> image.content().length == 0 || !image.contentType().startsWith("image/"))) {
-            throw new BusinessRuleViolation("Only non-empty image files are accepted");
+        if (keys.stream().anyMatch(key -> key == null || key.isBlank()) || keys.stream().distinct().count() != keys.size()) {
+            throw new BusinessRuleViolation("Image keys must be unique and non-empty");
         }
     }
 
-    private CompletionStage<Void> deleteUploadedImages(List<String> keys) {
-        return sequence(keys.stream().map(imageStorage::delete).toList()).thenApply(ignored -> null);
+    private CompletionStage<List<String>> sanitizeUploadedImages(UUID ownerId, List<String> keys) {
+        String requiredPrefix = "lost-pet-reports/staging/users/" + ownerId + "/";
+        if (keys.stream().anyMatch(key -> !key.startsWith(requiredPrefix))) {
+            return failed(new BusinessRuleViolation("An image does not belong to the authenticated user"));
+        }
+        List<String> sanitized = new java.util.ArrayList<>();
+        CompletionStage<Void> chain = CompletableFuture.completedFuture(null);
+        for (String key : keys) {
+            chain = chain.thenCompose(ignored -> imageStorage.sanitize(ownerId, key)
+                    .exceptionallyCompose(error -> failed(new BusinessRuleViolation("Uploaded image could not be validated")))
+                    .thenCompose(object -> {
+                if (!validImage(object)) {
+                    return failed(new BusinessRuleViolation("Uploaded images must be valid JPEG or PNG files and at most 8 MB"));
+                }
+                sanitized.add(object.objectKey());
+                return CompletableFuture.completedFuture(null);
+            }));
+        }
+        return chain.thenApply(ignored -> List.copyOf(sanitized))
+                .exceptionallyCompose(error -> deleteImages(List.copyOf(sanitized))
+                        .thenCompose(ignored -> failed(error instanceof java.util.concurrent.CompletionException
+                                && error.getCause() != null ? error.getCause() : error)));
     }
 
-    private static <T> CompletionStage<List<T>> sequence(List<? extends CompletionStage<T>> stages) {
-        CompletableFuture<?>[] futures = stages.stream().map(CompletionStage::toCompletableFuture)
-                .toArray(CompletableFuture[]::new);
-        return CompletableFuture.allOf(futures).thenApply(ignored -> {
-            List<T> results = new ArrayList<>(stages.size());
-            stages.forEach(stage -> results.add(stage.toCompletableFuture().join()));
-            return List.copyOf(results);
-        });
+    private CompletionStage<Void> deleteImages(List<String> keys) {
+        List<CompletionStage<Void>> deletes = keys.stream().map(imageStorage::delete).toList();
+        return CompletableFuture.allOf(deletes.stream().map(CompletionStage::toCompletableFuture)
+                .toArray(CompletableFuture[]::new));
+    }
+
+    private static boolean validImage(ImageStoragePort.StoredObject object) {
+        return object.contentLength() > 0 && object.contentLength() <= 8L * 1024 * 1024
+                && List.of("image/jpeg", "image/png").contains(object.contentType())
+                && object.checksumSha256() != null;
     }
 
     private static <T> CompletionStage<T> failed(Throwable error) {

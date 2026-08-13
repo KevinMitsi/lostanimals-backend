@@ -1,0 +1,10 @@
+package io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+import java.util.List;
+
+public record LostPetReportPageResponse(@NotNull List<@Valid LostPetReportResponse> items,
+                                        @Size(max = 200) String nextCursor) { }

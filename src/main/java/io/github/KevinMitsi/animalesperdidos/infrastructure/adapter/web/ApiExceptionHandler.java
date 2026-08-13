@@ -6,6 +6,9 @@ import io.github.KevinMitsi.animalesperdidos.application.exception.DuplicateUser
 import io.github.KevinMitsi.animalesperdidos.application.exception.InvalidCredentials;
 import io.github.KevinMitsi.animalesperdidos.application.exception.InvalidOrExpiredToken;
 import io.github.KevinMitsi.animalesperdidos.application.exception.EmailNotVerified;
+import io.github.KevinMitsi.animalesperdidos.application.exception.ResourceNotFound;
+import io.github.KevinMitsi.animalesperdidos.application.exception.ForbiddenOperation;
+import io.github.KevinMitsi.animalesperdidos.application.exception.ConcurrentUpdate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.support.WebExchangeBindException;
@@ -42,11 +45,26 @@ public class ApiExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage());
     }
 
-    @ExceptionHandler({BusinessRuleViolation.class, IllegalArgumentException.class})
+    @ExceptionHandler({BusinessRuleViolation.class, IllegalArgumentException.class, IllegalStateException.class})
     ProblemDetail businessRule(RuntimeException exception) {
         ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage());
         detail.setTitle("Business rule violation");
         return detail;
+    }
+
+    @ExceptionHandler(ResourceNotFound.class)
+    ProblemDetail notFound(ResourceNotFound exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(ForbiddenOperation.class)
+    ProblemDetail forbidden(ForbiddenOperation exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, exception.getMessage());
+    }
+
+    @ExceptionHandler(ConcurrentUpdate.class)
+    ProblemDetail conflict(ConcurrentUpdate exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
     }
 
     @ExceptionHandler(WebExchangeBindException.class)
@@ -69,6 +87,11 @@ public class ApiExceptionHandler {
         if (cause instanceof BotVerificationFailed bot) return bot(bot);
         if (cause instanceof EmailNotVerified email) return emailNotVerified(email);
         if (cause instanceof InvalidOrExpiredToken token) return invalidToken(token);
+        if (cause instanceof ResourceNotFound missing) return notFound(missing);
+        if (cause instanceof ForbiddenOperation forbidden) return forbidden(forbidden);
+        if (cause instanceof ConcurrentUpdate conflict) return conflict(conflict);
+        if (cause instanceof IllegalArgumentException invalid) return businessRule(invalid);
+        if (cause instanceof IllegalStateException invalidState) return businessRule(invalidState);
         return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "The operation could not be completed");
     }
 }

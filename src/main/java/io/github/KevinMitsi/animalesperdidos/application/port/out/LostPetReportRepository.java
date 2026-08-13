@@ -5,6 +5,8 @@ import io.github.KevinMitsi.animalesperdidos.domain.model.Species;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.Optional;
+import java.util.List;
 import java.util.concurrent.CompletionStage;
 
 public interface LostPetReportRepository {
@@ -14,4 +16,14 @@ public interface LostPetReportRepository {
     CompletionStage<Long> countCreatedByOwnerSince(UUID ownerId, Instant since);
 
     CompletionStage<LostPetReport> save(LostPetReport report);
+
+    CompletionStage<Optional<LostPetReport>> findById(UUID reportId);
+
+    CompletionStage<LostPetReport> update(LostPetReport report);
+
+    CompletionStage<List<LostPetReport>> search(SearchCriteria criteria);
+
+    record SearchCriteria(UUID ownerId, Species species, UUID neighborhoodId,
+                          io.github.KevinMitsi.animalesperdidos.domain.model.ReportStatus status,
+                          Instant cursorCreatedAt, UUID cursorId, int limit) { }
 }

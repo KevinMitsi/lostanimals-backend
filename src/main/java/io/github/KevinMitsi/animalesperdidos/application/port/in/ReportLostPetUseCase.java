@@ -13,20 +13,9 @@ public interface ReportLostPetUseCase {
 
     record Command(UUID ownerId, String petName, Species species, String description,
                    Instant disappearedAt, double latitude, double longitude,
-                   UUID neighborhoodId, List<Image> images) {
+                   UUID neighborhoodId, List<String> imageKeys) {
         public Command {
-            images = List.copyOf(images);
-        }
-    }
-
-    record Image(String fileName, String contentType, byte[] content) {
-        public Image {
-            content = content.clone();
-        }
-
-        @Override
-        public byte[] content() {
-            return content.clone();
+            imageKeys = List.copyOf(imageKeys);
         }
     }
 
