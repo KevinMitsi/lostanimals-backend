@@ -5,6 +5,7 @@ import io.github.KevinMitsi.animalesperdidos.application.port.in.ReportLostPetUs
 import io.github.KevinMitsi.animalesperdidos.application.port.out.ImageStoragePort;
 import io.github.KevinMitsi.animalesperdidos.application.port.out.LostPetReportRepository;
 import io.github.KevinMitsi.animalesperdidos.application.port.out.NotificationPort;
+import io.github.KevinMitsi.animalesperdidos.application.port.out.ServiceAreaRepository;
 import io.github.KevinMitsi.animalesperdidos.domain.model.GeoPoint;
 import io.github.KevinMitsi.animalesperdidos.domain.model.LostPetReport;
 
@@ -24,13 +25,15 @@ public final class ReportLostPetService implements ReportLostPetUseCase {
     private final ImageStoragePort imageStorage;
     private final NotificationPort notification;
     private final Clock clock;
+    private final ServiceAreaRepository serviceAreas;
 
     public ReportLostPetService(LostPetReportRepository repository, ImageStoragePort imageStorage,
-                                NotificationPort notification, Clock clock) {
+                                NotificationPort notification, Clock clock, ServiceAreaRepository serviceAreas) {
         this.repository = repository;
         this.imageStorage = imageStorage;
         this.notification = notification;
         this.clock = clock;
+        this.serviceAreas = serviceAreas;
     }
 
     @Override
@@ -46,7 +49,10 @@ public final class ReportLostPetService implements ReportLostPetUseCase {
         CompletionStage<Long> dailyCount = repository.countCreatedByOwnerSince(command.ownerId(),
                 now.minus(Duration.ofDays(1)));
 
-        return duplicate.thenCombine(dailyCount, Checks::new)
+        return serviceAreas.isNeighborhoodEnabled(command.neighborhoodId()).thenCompose(enabled -> {
+            if (!enabled) return failed(new BusinessRuleViolation("Publication area is not enabled"));
+            return duplicate.thenCombine(dailyCount, Checks::new);
+        })
                 .thenCompose(this::enforcePublicationRules)
                 .thenCompose(ignored -> sanitizeUploadedImages(command.ownerId(), command.imageKeys()))
                 .thenCompose(keys -> persist(command, keys, now));

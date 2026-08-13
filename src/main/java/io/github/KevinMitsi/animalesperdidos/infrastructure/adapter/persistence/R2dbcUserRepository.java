@@ -3,6 +3,7 @@ package io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.persistence
 import io.github.KevinMitsi.animalesperdidos.application.exception.DuplicateUserData;
 import io.github.KevinMitsi.animalesperdidos.application.port.out.UserRepository;
 import io.github.KevinMitsi.animalesperdidos.domain.model.User;
+import io.github.KevinMitsi.animalesperdidos.domain.model.UserRole;
 import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.persistence.entity.UserEntity;
 import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.persistence.mapper.UserPersistenceMapper;
 import lombok.RequiredArgsConstructor;
@@ -53,7 +54,7 @@ public class R2dbcUserRepository implements UserRepository {
     private <T> Mono<User> selectUser(String where, T value) {
         return databaseClient.sql("""
                         SELECT id, email, password_hash, phone, document_number, display_name,
-                               habeas_data_accepted_at, email_verified_at, created_at
+                               role, habeas_data_accepted_at, email_verified_at, created_at
                         FROM app_user %s
                         """.formatted(where))
                 .bind("value", value)
@@ -61,6 +62,7 @@ public class R2dbcUserRepository implements UserRepository {
                         row.get("id", UUID.class), row.get("email", String.class),
                         row.get("password_hash", String.class), row.get("phone", String.class),
                         row.get("document_number", String.class), row.get("display_name", String.class),
+                        UserRole.valueOf(row.get("role", String.class)),
                         row.get("habeas_data_accepted_at", Instant.class), row.get("email_verified_at", Instant.class),
                         row.get("created_at", Instant.class)))
                 .one().map(mapper::toDomain);
@@ -93,11 +95,12 @@ public class R2dbcUserRepository implements UserRepository {
     @Override
     public CompletionStage<User> update(User user) {
         return databaseClient.sql("""
-                        UPDATE app_user SET password_hash = :passwordHash, email_verified_at = :emailVerifiedAt
+                        UPDATE app_user SET password_hash = :passwordHash, email_verified_at = :emailVerifiedAt, role=:role
                         WHERE id = :id
                         """)
                 .bind("passwordHash", user.passwordHash())
                 .bind("emailVerifiedAt", user.emailVerifiedAt() == null ? io.r2dbc.spi.Parameters.in(Instant.class) : user.emailVerifiedAt())
+                .bind("role", user.role().name())
                 .bind("id", user.id())
                 .fetch().rowsUpdated()
                 .flatMap(rows -> rows == 1 ? Mono.just(user) : Mono.error(new IllegalStateException("User not found")))

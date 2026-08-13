@@ -20,8 +20,8 @@ public class ApplicationConfiguration {
     ReportLostPetUseCase reportLostPetUseCase(LostPetReportRepository repository,
                                                ImageStoragePort imageStorage,
                                                NotificationPort notification,
-                                               Clock clock) {
-        return new ReportLostPetService(repository, imageStorage, notification, clock);
+                                               Clock clock, ServiceAreaRepository serviceAreas) {
+        return new ReportLostPetService(repository, imageStorage, notification, clock, serviceAreas);
     }
 
     @Bean
@@ -37,13 +37,15 @@ public class ApplicationConfiguration {
 
     @Bean
     ManageLostPetReportUseCase manageLostPetReportUseCase(LostPetReportRepository repository,
-                                                           ImageStoragePort storage, Clock clock) {
-        return new ManageLostPetReportService(repository, storage, clock);
+                                                           ImageStoragePort storage, Clock clock,
+                                                           ServiceAreaRepository serviceAreas) {
+        return new ManageLostPetReportService(repository, storage, clock, serviceAreas);
     }
 
     @Bean
-    CreateSightingUseCase createSightingUseCase(SightingRepository repository, ImageStoragePort storage, Clock clock) {
-        return new CreateSightingService(repository, storage, clock);
+    CreateSightingUseCase createSightingUseCase(SightingRepository repository, ImageStoragePort storage, Clock clock,
+                                                ServiceAreaRepository serviceAreas) {
+        return new CreateSightingService(repository, storage, clock, serviceAreas);
     }
 
     @Bean
@@ -57,13 +59,36 @@ public class ApplicationConfiguration {
     }
 
     @Bean
-    ManageSightingUseCase manageSightingUseCase(SightingRepository repository, ImageStoragePort storage, Clock clock) {
-        return new ManageSightingService(repository, storage, clock);
+    ManageSightingUseCase manageSightingUseCase(SightingRepository repository, ImageStoragePort storage, Clock clock,
+                                                ServiceAreaRepository serviceAreas) {
+        return new ManageSightingService(repository, storage, clock, serviceAreas);
     }
 
     @Bean
     QueryGeographicCatalogUseCase queryGeographicCatalogUseCase(GeographicCatalogRepository repository) {
         return new QueryGeographicCatalogService(repository);
+    }
+
+    @Bean ContactRequestUseCase contactRequestUseCase(ContactRepository contacts, LostPetReportRepository reports,
+                                                       SightingRepository sightings, Clock clock) {
+        return new ContactRequestService(contacts, reports, sightings, clock);
+    }
+
+    @Bean ConversationUseCase conversationUseCase(ContactRepository contacts, UserRepository users, Clock clock) {
+        return new ConversationService(contacts, users, clock);
+    }
+
+    @Bean ReunionModerationUseCase reunionModerationUseCase(ModerationRepository moderation,
+            LostPetReportRepository reports, UserRepository users, Clock clock) {
+        return new ReunionModerationService(moderation, reports, users, clock);
+    }
+
+    @Bean AdminUseCase adminUseCase(ServiceAreaRepository areas, UserRepository users, Clock clock) {
+        return new AdminService(areas, users, clock);
+    }
+
+    @Bean ContentModerationUseCase contentModerationUseCase(ModerationRepository moderation, Clock clock) {
+        return new ContentModerationService(moderation, clock);
     }
 
     @Bean

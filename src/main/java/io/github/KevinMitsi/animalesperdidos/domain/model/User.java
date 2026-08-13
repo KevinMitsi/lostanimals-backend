@@ -6,12 +6,13 @@ import java.util.Objects;
 import java.util.UUID;
 
 public record User(UUID id, String email, String passwordHash, String phone, String documentNumber,
-                   String displayName, Instant habeasDataAcceptedAt, Instant emailVerifiedAt, Instant createdAt) {
+                   String displayName, UserRole role, Instant habeasDataAcceptedAt, Instant emailVerifiedAt, Instant createdAt) {
 
     public User {
         Objects.requireNonNull(id);
         Objects.requireNonNull(habeasDataAcceptedAt);
         Objects.requireNonNull(createdAt);
+        Objects.requireNonNull(role);
         email = requireText(email, "email").toLowerCase(Locale.ROOT);
         passwordHash = requireText(passwordHash, "passwordHash");
         phone = requireText(phone, "phone");
@@ -27,7 +28,7 @@ public record User(UUID id, String email, String passwordHash, String phone, Str
 
     public static User register(UUID id, String email, String passwordHash, String phone,
                                 String documentNumber, String displayName, Instant now) {
-        return new User(id, email, passwordHash, phone, documentNumber, displayName, now, null, now);
+        return new User(id, email, passwordHash, phone, documentNumber, displayName, UserRole.USER, now, null, now);
     }
 
     public boolean isEmailVerified() {
@@ -36,13 +37,18 @@ public record User(UUID id, String email, String passwordHash, String phone, Str
 
     public User verifyEmail(Instant verifiedAt) {
         Objects.requireNonNull(verifiedAt);
-        return new User(id, email, passwordHash, phone, documentNumber, displayName,
+        return new User(id, email, passwordHash, phone, documentNumber, displayName, role,
                 habeasDataAcceptedAt, verifiedAt, createdAt);
     }
 
     public User changePassword(String newPasswordHash) {
-        return new User(id, email, newPasswordHash, phone, documentNumber, displayName,
+        return new User(id, email, newPasswordHash, phone, documentNumber, displayName, role,
                 habeasDataAcceptedAt, emailVerifiedAt, createdAt);
+    }
+
+    public User changeRole(UserRole newRole) {
+        return new User(id, email, passwordHash, phone, documentNumber, displayName,
+                Objects.requireNonNull(newRole), habeasDataAcceptedAt, emailVerifiedAt, createdAt);
     }
 
     private static String requireText(String value, String field) {

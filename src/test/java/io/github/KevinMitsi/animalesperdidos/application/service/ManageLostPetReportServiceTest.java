@@ -4,6 +4,7 @@ import io.github.KevinMitsi.animalesperdidos.application.exception.ForbiddenOper
 import io.github.KevinMitsi.animalesperdidos.application.port.in.ManageLostPetReportUseCase;
 import io.github.KevinMitsi.animalesperdidos.application.port.out.ImageStoragePort;
 import io.github.KevinMitsi.animalesperdidos.application.port.out.LostPetReportRepository;
+import io.github.KevinMitsi.animalesperdidos.application.port.out.ServiceAreaRepository;
 import io.github.KevinMitsi.animalesperdidos.domain.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,12 +31,14 @@ class ManageLostPetReportServiceTest {
     private static final UUID OWNER = UUID.fromString("10000000-0000-0000-0000-000000000001");
     @Mock LostPetReportRepository repository;
     @Mock ImageStoragePort storage;
+    @Mock ServiceAreaRepository serviceAreas;
     @Captor ArgumentCaptor<LostPetReport> reportCaptor;
     private ManageLostPetReportService service;
 
     @BeforeEach
     void setUp() {
-        service = new ManageLostPetReportService(repository, storage, Clock.fixed(NOW, ZoneOffset.UTC));
+        lenient().when(serviceAreas.isNeighborhoodEnabled(any())).thenReturn(completed(true));
+        service = new ManageLostPetReportService(repository, storage, Clock.fixed(NOW, ZoneOffset.UTC), serviceAreas);
     }
 
     @Test
@@ -60,10 +63,16 @@ class ManageLostPetReportServiceTest {
         when(repository.findById(report.id())).thenReturn(completed(Optional.of(report)));
 
         CompletionException error = assertThrows(CompletionException.class, () -> service.close(
-                UUID.randomUUID(), report.id(), ReportStatus.REUNITED).toCompletableFuture().join());
+                UUID.randomUUID(), report.id(), ReportStatus.CLOSED).toCompletableFuture().join());
 
         assertInstanceOf(ForbiddenOperation.class, error.getCause());
         verify(repository, never()).update(any());
+    }
+
+    @Test
+    void ownerCannotMarkReportAsReunited() {
+        assertThrows(ForbiddenOperation.class, () -> service.close(OWNER, UUID.randomUUID(), ReportStatus.REUNITED));
+        verifyNoInteractions(repository, storage);
     }
 
     @Test
