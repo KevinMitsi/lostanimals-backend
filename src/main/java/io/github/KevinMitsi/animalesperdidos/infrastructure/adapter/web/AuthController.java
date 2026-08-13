@@ -2,10 +2,13 @@ package io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web;
 
 import io.github.KevinMitsi.animalesperdidos.application.port.in.AuthenticateUserUseCase;
 import io.github.KevinMitsi.animalesperdidos.application.port.in.RegisterUserUseCase;
+import io.github.KevinMitsi.animalesperdidos.application.port.in.VerifyEmailUseCase;
+import io.github.KevinMitsi.animalesperdidos.application.port.in.PasswordRecoveryUseCase;
+import io.github.KevinMitsi.animalesperdidos.application.port.in.RefreshSessionUseCase;
 import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto.LoginRequest;
 import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto.RegisterUserRequest;
 import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto.RegisteredUserResponse;
-import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto.TokenResponse;
+import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto.*;
 import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.mapper.AuthWebMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -28,6 +31,9 @@ import reactor.core.publisher.Mono;
 public class AuthController {
     private final RegisterUserUseCase registerUser;
     private final AuthenticateUserUseCase authenticateUser;
+    private final VerifyEmailUseCase verifyEmail;
+    private final PasswordRecoveryUseCase passwordRecovery;
+    private final RefreshSessionUseCase refreshSessions;
     private final AuthWebMapper mapper;
     private final ClientIpResolver clientIpResolver;
 
@@ -55,5 +61,54 @@ public class AuthController {
         return Mono.fromCompletionStage(authenticateUser.authenticate(
                         mapper.toCommand(request, clientIpResolver.resolve(httpRequest))))
                 .map(mapper::toResponse);
+    }
+
+    @PostMapping("/verify-email")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Verify an email with a one-time token",
+            responses = {@ApiResponse(responseCode = "204", description = "Email verified"),
+                    @ApiResponse(responseCode = "422", description = "Token invalid, expired or used")})
+    public Mono<Void> verifyEmail(@Valid @RequestBody OpaqueTokenRequest request) {
+        return Mono.fromCompletionStage(verifyEmail.verify(request.token()));
+    }
+
+    @PostMapping("/resend-verification")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @Operation(summary = "Request another verification email",
+            description = "Always returns 202 to prevent account enumeration")
+    public Mono<Void> resendVerification(@Valid @RequestBody EmailActionRequest request,
+                                         ServerHttpRequest httpRequest) {
+        return Mono.fromCompletionStage(verifyEmail.resend(request.email(), request.turnstileToken(),
+                clientIpResolver.resolve(httpRequest)));
+    }
+
+    @PostMapping("/forgot-password")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @Operation(summary = "Request a password reset",
+            description = "Always returns 202 to prevent account enumeration")
+    public Mono<Void> forgotPassword(@Valid @RequestBody EmailActionRequest request,
+                                     ServerHttpRequest httpRequest) {
+        return Mono.fromCompletionStage(passwordRecovery.request(request.email(), request.turnstileToken(),
+                clientIpResolver.resolve(httpRequest)));
+    }
+
+    @PostMapping("/reset-password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Set a new password using a one-time reset token")
+    public Mono<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        return Mono.fromCompletionStage(passwordRecovery.reset(request.token(), request.newPassword()));
+    }
+
+    @PostMapping("/refresh")
+    @Operation(summary = "Rotate a refresh token and issue a new token pair")
+    public Mono<TokenResponse> refresh(@Valid @RequestBody OpaqueTokenRequest request) {
+        return Mono.fromCompletionStage(refreshSessions.refresh(request.token())).map(mapper::toResponse);
+    }
+
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Revoke a refresh token")
+    public Mono<Void> logout(@Valid @RequestBody OpaqueTokenRequest request) {
+        return Mono.fromCompletionStage(refreshSessions.logout(request.token()));
     }
 }
