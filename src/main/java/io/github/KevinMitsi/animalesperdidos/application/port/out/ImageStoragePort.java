@@ -12,12 +12,12 @@ public interface ImageStoragePort {
 
     CompletionStage<Void> delete(String objectKey);
 
-    CompletionStage<PreparedUpload> prepareUpload(UUID ownerId, String fileName, String contentType,
+    CompletionStage<PreparedUpload> prepareUpload(UUID ownerId, Category category, String fileName, String contentType,
                                                    long contentLength, String checksumSha256, Duration validity);
 
     CompletionStage<StoredObject> inspect(String objectKey);
 
-    CompletionStage<StoredObject> sanitize(UUID ownerId, String stagingObjectKey);
+    CompletionStage<StoredObject> sanitize(UUID ownerId, Category category, String stagingObjectKey);
 
     CompletionStage<String> createDownloadUrl(String objectKey, Duration validity);
 
@@ -25,4 +25,10 @@ public interface ImageStoragePort {
                           Map<String, String> requiredHeaders, Instant expiresAt) { }
 
     record StoredObject(String objectKey, String contentType, long contentLength, String checksumSha256) { }
+    enum Category {
+        LOST_PET_REPORT("lost-pet-reports"), SIGHTING("sightings");
+        private final String folder;
+        Category(String folder) { this.folder = folder; }
+        public String folder() { return folder; }
+    }
 }

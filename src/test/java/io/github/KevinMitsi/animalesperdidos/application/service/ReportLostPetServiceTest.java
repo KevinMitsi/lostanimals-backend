@@ -53,7 +53,7 @@ class ReportLostPetServiceTest {
     void storesTheImageAndPersistsTheReport() {
         when(repository.existsActiveDuplicate(any(), any(), anyString(), any())).thenReturn(completed(false));
         when(repository.countCreatedByOwnerSince(any(), any())).thenReturn(completed(0L));
-        when(storage.sanitize(OWNER_ID, IMAGE_KEY)).thenReturn(completed(
+        when(storage.sanitize(OWNER_ID, ImageStoragePort.Category.LOST_PET_REPORT, IMAGE_KEY)).thenReturn(completed(
                 new ImageStoragePort.StoredObject(SANITIZED_KEY, "image/jpeg", 1024, CHECKSUM)));
         when(repository.save(any())).thenAnswer(invocation -> completed(invocation.getArgument(0)));
         when(notification.reportCreated(any())).thenReturn(completed(null));

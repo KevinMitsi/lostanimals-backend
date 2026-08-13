@@ -42,6 +42,26 @@ public class ApplicationConfiguration {
     }
 
     @Bean
+    CreateSightingUseCase createSightingUseCase(SightingRepository repository, ImageStoragePort storage, Clock clock) {
+        return new CreateSightingService(repository, storage, clock);
+    }
+
+    @Bean
+    PrepareSightingImageUploadUseCase prepareSightingImageUploadUseCase(ImageStoragePort storage) {
+        return new PrepareSightingImageUploadService(storage);
+    }
+
+    @Bean
+    QuerySightingsUseCase querySightingsUseCase(SightingRepository repository, ImageStoragePort storage) {
+        return new QuerySightingsService(repository, storage);
+    }
+
+    @Bean
+    ManageSightingUseCase manageSightingUseCase(SightingRepository repository, ImageStoragePort storage, Clock clock) {
+        return new ManageSightingService(repository, storage, clock);
+    }
+
+    @Bean
     RegisterUserUseCase registerUserUseCase(UserRepository repository, PasswordHasherPort passwordHasher,
                                              BotVerificationPort botVerification, Clock clock,
                                              AccountTokenRepository accountTokens, OpaqueTokenPort opaqueTokens,

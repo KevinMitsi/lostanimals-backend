@@ -43,6 +43,8 @@ public class SecurityConfiguration {
                         .pathMatchers("/api/v1/auth/**", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/v1/lost-pet-reports/mine").authenticated()
                         .pathMatchers(HttpMethod.GET, "/api/v1/lost-pet-reports", "/api/v1/lost-pet-reports/*").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/v1/sightings/mine").authenticated()
+                        .pathMatchers(HttpMethod.GET, "/api/v1/sightings", "/api/v1/sightings/*").permitAll()
                         .anyExchange().authenticated())
                 .oauth2ResourceServer(resourceServer -> resourceServer.jwt(Customizer.withDefaults()))
                 .build();

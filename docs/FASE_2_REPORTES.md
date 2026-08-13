@@ -35,8 +35,8 @@ La paginación usa cursor estable `(created_at,id)` y pide como máximo 50 eleme
 
 - Activar **Block Public Access** en las cuatro opciones.
 - No agregar ACL públicas ni políticas `Principal: *` para lectura.
-- La identidad del backend necesita únicamente `s3:PutObject`, `s3:GetObject`, `s3:HeadObject` y `s3:DeleteObject` sobre `lost-pet-reports/*`.
-- Crear una regla lifecycle que elimine `lost-pet-reports/staging/` después de un día para limpiar cargas abandonadas.
+- La identidad del backend necesita únicamente `s3:PutObject`, `s3:GetObject`, `s3:HeadObject` y `s3:DeleteObject` sobre `lost-pet-reports/*` y `sightings/*`.
+- Crear reglas lifecycle que eliminen `lost-pet-reports/staging/` y `sightings/staging/` después de un día para limpiar cargas abandonadas.
 - Configurar CORS sustituyendo el origen por el frontend real:
 
 ```json

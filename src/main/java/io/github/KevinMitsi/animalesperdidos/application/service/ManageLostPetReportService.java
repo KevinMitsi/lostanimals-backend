@@ -45,7 +45,7 @@ public final class ManageLostPetReportService implements ManageLostPetReportUseC
     public CompletionStage<UUID> addImage(UUID actorId, UUID reportId, String objectKey) {
         String requiredPrefix = "lost-pet-reports/staging/users/" + actorId + "/";
         if (!objectKey.startsWith(requiredPrefix)) throw new BusinessRuleViolation("Image does not belong to the user");
-        return storage.sanitize(actorId, objectKey)
+        return storage.sanitize(actorId, ImageStoragePort.Category.LOST_PET_REPORT, objectKey)
                 .exceptionallyCompose(error -> failed(new BusinessRuleViolation("Uploaded image could not be validated")))
                 .thenCompose(object -> {
             if (!validImage(object)) return failed(new BusinessRuleViolation("Uploaded image is invalid"));

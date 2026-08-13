@@ -92,7 +92,8 @@ public final class ReportLostPetService implements ReportLostPetUseCase {
         List<String> sanitized = new java.util.ArrayList<>();
         CompletionStage<Void> chain = CompletableFuture.completedFuture(null);
         for (String key : keys) {
-            chain = chain.thenCompose(ignored -> imageStorage.sanitize(ownerId, key)
+            chain = chain.thenCompose(ignored -> imageStorage.sanitize(ownerId,
+                            ImageStoragePort.Category.LOST_PET_REPORT, key)
                     .exceptionallyCompose(error -> failed(new BusinessRuleViolation("Uploaded image could not be validated")))
                     .thenCompose(object -> {
                 if (!validImage(object)) {

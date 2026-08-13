@@ -72,7 +72,7 @@ class ManageLostPetReportServiceTest {
         String checksum = java.util.Base64.getEncoder().encodeToString(new byte[32]);
         String key = "lost-pet-reports/staging/users/" + OWNER + "/new-" + "0".repeat(64) + ".jpg";
         String cleanKey = "lost-pet-reports/users/" + OWNER + "/clean-" + "0".repeat(64) + ".jpg";
-        when(storage.sanitize(OWNER, key)).thenReturn(completed(
+        when(storage.sanitize(OWNER, ImageStoragePort.Category.LOST_PET_REPORT, key)).thenReturn(completed(
                 new ImageStoragePort.StoredObject(cleanKey, "image/jpeg", 2000, checksum)));
         when(repository.findById(report.id())).thenReturn(completed(Optional.of(report)));
         when(repository.update(any())).thenAnswer(invocation -> completed(invocation.getArgument(0)));

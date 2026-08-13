@@ -1,5 +1,6 @@
 package io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.storage;
 
+import io.github.KevinMitsi.animalesperdidos.application.port.out.ImageStoragePort;
 import io.github.KevinMitsi.animalesperdidos.infrastructure.config.S3Configuration.S3Properties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,7 +67,7 @@ class S3ImageStorageAdapterTest {
         when(client.deleteObject(any(DeleteObjectRequest.class)))
                 .thenReturn(CompletableFuture.completedFuture(DeleteObjectResponse.builder().build()));
 
-        var result = adapter.sanitize(owner, stagingKey).toCompletableFuture().join();
+        var result = adapter.sanitize(owner, ImageStoragePort.Category.LOST_PET_REPORT, stagingKey).toCompletableFuture().join();
 
         verify(client).putObject(putRequest.capture(), any(AsyncRequestBody.class));
         verify(client).deleteObject(deleteRequest.capture());

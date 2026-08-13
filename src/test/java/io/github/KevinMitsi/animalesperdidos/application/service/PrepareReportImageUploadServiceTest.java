@@ -26,7 +26,7 @@ class PrepareReportImageUploadServiceTest {
         UUID owner = UUID.randomUUID();
         Instant expiry = Instant.now().plusSeconds(600);
         String checksum = java.util.Base64.getEncoder().encodeToString(new byte[32]);
-        when(storage.prepareUpload(eq(owner), eq("luna.jpg"), eq("image/jpeg"), eq(1024L), eq(checksum), eq(Duration.ofMinutes(10))))
+        when(storage.prepareUpload(eq(owner), eq(ImageStoragePort.Category.LOST_PET_REPORT), eq("luna.jpg"), eq("image/jpeg"), eq(1024L), eq(checksum), eq(Duration.ofMinutes(10))))
                 .thenReturn(completed(new ImageStoragePort.PreparedUpload("key", "https://s3/upload", "PUT",
                         Map.of("content-type", "image/jpeg"), expiry)));
 

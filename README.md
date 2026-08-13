@@ -14,8 +14,8 @@ application (casos de uso y puertos de entrada/salida)
 domain (reglas y modelos Java puros)
 ```
 
-- `domain`: agregado `LostPetReport`, objetos de valor y reglas invariantes. No conoce Spring ni infraestructura.
-- `application`: coordina el caso de uso `ReportLostPetUseCase`. Los puertos abstraen persistencia, imágenes y notificaciones.
+- `domain`: agregados `LostPetReport` y `Sighting`, objetos de valor y reglas invariantes. No conoce Spring ni infraestructura.
+- `application`: coordina los casos de uso de identidad, reportes y avistamientos. Los puertos abstraen persistencia, imágenes y notificaciones.
 - `infrastructure.adapter.web`: Controller GRASP; traduce HTTP al caso de uso sin contener reglas de negocio.
 - `infrastructure.adapter.persistence`: PostgreSQL/PostGIS mediante R2DBC.
 - `infrastructure.adapter.storage`: implementación S3 de `ImageStoragePort`. Cambiar S3 por otro proveedor solo requiere otro adaptador.
@@ -73,13 +73,15 @@ La implementación y contratos de la primera fase están descritos en [docs/FASE
 
 La gestión completa de reportes, carga directa privada a S3, sanitización de imágenes y configuración CORS están en [docs/FASE_2_REPORTES.md](docs/FASE_2_REPORTES.md).
 
+La publicación, detección PostGIS de posibles duplicados y gestión de avistamientos están en [docs/FASE_3_AVISTAMIENTOS.md](docs/FASE_3_AVISTAMIENTOS.md).
+
 ## Reportes de mascotas
 
-`POST /api/v1/lost-pet-reports`, tipo `multipart/form-data`:
+`POST /api/v1/lost-pet-reports`, tipo `application/json` después de la carga directa a S3:
 
 - encabezado `Authorization: Bearer <jwt>`; el dueño se obtiene del claim firmado `sub`;
-- parte `metadata`: JSON con `petName`, `species`, `description`, `disappearedAt`, `latitude`, `longitude` y `neighborhoodId`;
-- una o más partes `images` (máximo cinco).
+- cuerpo JSON con `petName`, `species`, `description`, `disappearedAt`, `latitude`, `longitude`, `neighborhoodId` e `imageKeys`;
+- entre una y cinco claves obtenidas previamente en `/image-uploads`.
 
 La configuración de Turnstile, WAF, rate limiting y aislamiento del origen está en [docs/CLOUDFLARE.md](docs/CLOUDFLARE.md).
 
@@ -91,4 +93,4 @@ La configuración de Turnstile, WAF, rate limiting y aislamiento del origen est�
 - Si persiste el reporte falla, el caso de uso compensa eliminando de S3 las imágenes subidas.
 - Los datos de contacto están separados y no aparecen en el contrato público.
 
-La siguiente vertical recomendada es recuperación/verificación de correo y contraseña; después, avistamientos con detección espacio-temporal y búsqueda por radio PostGIS.
+La siguiente vertical es búsqueda geoespacial por radio con PostGIS y filtros territoriales.

@@ -62,10 +62,11 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
     }
 
     @Override
-    public CompletionStage<PreparedUpload> prepareUpload(UUID ownerId, String fileName, String contentType,
+    public CompletionStage<PreparedUpload> prepareUpload(UUID ownerId, Category category,
+                                                          String fileName, String contentType,
                                                           long contentLength, String checksumSha256, Duration validity) {
         String checksumHex = java.util.HexFormat.of().formatHex(java.util.Base64.getDecoder().decode(checksumSha256));
-        String key = "lost-pet-reports/staging/users/" + ownerId + "/" + UUID.randomUUID() + "-" + checksumHex
+        String key = category.folder() + "/staging/users/" + ownerId + "/" + UUID.randomUUID() + "-" + checksumHex
                 + extensionFor(contentType);
         PutObjectRequest objectRequest = PutObjectRequest.builder().bucket(properties.getBucket()).key(key)
                 .contentType(contentType).contentLength(contentLength).checksumSHA256(checksumSha256).build();
@@ -93,8 +94,8 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
     }
 
     @Override
-    public CompletionStage<StoredObject> sanitize(UUID ownerId, String stagingObjectKey) {
-        String requiredPrefix = "lost-pet-reports/staging/users/" + ownerId + "/";
+    public CompletionStage<StoredObject> sanitize(UUID ownerId, Category category, String stagingObjectKey) {
+        String requiredPrefix = category.folder() + "/staging/users/" + ownerId + "/";
         if (!stagingObjectKey.startsWith(requiredPrefix)) {
             return java.util.concurrent.CompletableFuture.failedFuture(new IllegalArgumentException("Invalid staging key"));
         }
@@ -107,7 +108,7 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
             return client.getObject(download, AsyncResponseTransformer.toBytes())
                     .thenCompose(bytes -> Mono.fromCallable(() -> sanitizeBytes(bytes.asByteArray(), staged.contentType()))
                             .subscribeOn(Schedulers.boundedElastic()).toFuture())
-                    .thenCompose(sanitized -> persistSanitized(ownerId, stagingObjectKey, sanitized));
+                    .thenCompose(sanitized -> persistSanitized(ownerId, category, stagingObjectKey, sanitized));
         });
     }
 
@@ -148,9 +149,10 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
         return "application/octet-stream";
     }
 
-    private CompletionStage<StoredObject> persistSanitized(UUID ownerId, String stagingKey, SanitizedBytes sanitized) {
+    private CompletionStage<StoredObject> persistSanitized(UUID ownerId, Category category,
+                                                            String stagingKey, SanitizedBytes sanitized) {
         String checksumHex = java.util.HexFormat.of().formatHex(java.util.Base64.getDecoder().decode(sanitized.checksum()));
-        String finalKey = "lost-pet-reports/users/" + ownerId + "/" + UUID.randomUUID() + "-" + checksumHex
+        String finalKey = category.folder() + "/users/" + ownerId + "/" + UUID.randomUUID() + "-" + checksumHex
                 + extensionFor(sanitized.contentType());
         PutObjectRequest put = PutObjectRequest.builder().bucket(properties.getBucket()).key(finalKey)
                 .contentType(sanitized.contentType()).contentLength((long) sanitized.bytes().length)

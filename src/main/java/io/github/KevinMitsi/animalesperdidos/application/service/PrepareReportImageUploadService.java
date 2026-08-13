@@ -31,7 +31,8 @@ public final class PrepareReportImageUploadService implements PrepareReportImage
         } catch (IllegalArgumentException invalidBase64) {
             throw new BusinessRuleViolation("Checksum must be SHA-256 encoded as Base64");
         }
-        return storage.prepareUpload(command.ownerId(), command.fileName(), command.contentType(),
+        return storage.prepareUpload(command.ownerId(), ImageStoragePort.Category.LOST_PET_REPORT,
+                        command.fileName(), command.contentType(),
                         command.contentLength(), command.checksumSha256(), VALIDITY)
                 .thenApply(upload -> new Result(upload.objectKey(), upload.uploadUrl(), upload.method(),
                         upload.requiredHeaders(), upload.expiresAt()));
