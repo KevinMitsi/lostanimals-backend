@@ -6,6 +6,7 @@ import io.github.KevinMitsi.animalesperdidos.domain.model.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.*;
 import java.util.*;
@@ -34,8 +35,23 @@ class QuerySightingsServiceTest {
         when(repository.search(any())).thenReturn(done(List.of(sighting)));
         when(storage.createDownloadUrl(anyString(), any())).thenReturn(done("url"));
         var page = new QuerySightingsService(repository, storage).mine(sighting.reporterId(),
-                new QuerySightingsUseCase.Search(null, null, null, null, null, 20)).toCompletableFuture().join();
+                new QuerySightingsUseCase.Search(null, null, null, null, null, null, null,
+                        null, null, null, null, 20)).toCompletableFuture().join();
         assertEquals(4.53391, page.items().getFirst().latitude());
+    }
+
+    @Test void passesGeospatialAndTerritorialFiltersToRepository() {
+        ArgumentCaptor<SightingRepository.SearchCriteria> captor = ArgumentCaptor.forClass(SightingRepository.SearchCriteria.class);
+        when(repository.search(any())).thenReturn(done(List.of()));
+        UUID department = UUID.randomUUID(); UUID city = UUID.randomUUID();
+        var search = new QuerySightingsUseCase.Search(Species.CAT, department, city, null, SightingStatus.ACTIVE,
+                Instant.parse("2026-08-01T00:00:00Z"), null, 4.53, -75.68, 5000d, null, 10);
+        new QuerySightingsService(repository, storage).searchPublic(search).toCompletableFuture().join();
+        verify(repository).search(captor.capture());
+        assertEquals(department, captor.getValue().departmentId());
+        assertEquals(city, captor.getValue().cityId());
+        assertEquals(5000d, captor.getValue().area().radiusMeters());
+        assertFalse(captor.getValue().exactLocation());
     }
 
     private static Sighting sighting() {

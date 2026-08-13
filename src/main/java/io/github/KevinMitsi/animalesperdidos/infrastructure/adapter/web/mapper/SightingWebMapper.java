@@ -15,6 +15,8 @@ public interface SightingWebMapper {
 
     ManageSightingUseCase.Edit toCommand(EditSightingRequest request);
 
+    QuerySightingsUseCase.Search toSearch(SightingSearchRequest request);
+
     @Mapping(target = "id", source = "sightingId")
     CreateSightingResponse toResponse(CreateSightingUseCase.Result result);
     DuplicateSightingWarningResponse toResponse(CreateSightingUseCase.DuplicateWarning warning);

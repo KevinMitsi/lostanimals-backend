@@ -49,7 +49,7 @@ class QueryLostPetReportsServiceTest {
         when(storage.createDownloadUrl(anyString(), eq(Duration.ofMinutes(15))))
                 .thenAnswer(invocation -> completed("https://s3/" + invocation.getArgument(0)));
         QueryLostPetReportsUseCase.Search search = new QueryLostPetReportsUseCase.Search(
-                null, null, null, null, null, 1);
+                null, null, null, null, null, null, null, null, null, null, null, 1);
 
         QueryLostPetReportsUseCase.Page page = new QueryLostPetReportsService(repository, storage)
                 .mine(first.ownerId(), search).toCompletableFuture().join();
@@ -59,5 +59,36 @@ class QueryLostPetReportsServiceTest {
         assertEquals(first.lastSeenAt().latitude(), page.items().getFirst().latitude());
         assertNotNull(page.nextCursor());
         assertEquals(1, page.items().size());
+    }
+
+    @Test
+    void translatesRadiusTerritoryDatesAndCursorIntoRepositoryCriteria() {
+        when(repository.search(any())).thenReturn(completed(List.of()));
+        QueryLostPetReportsUseCase.Search search = new QueryLostPetReportsUseCase.Search(
+                io.github.KevinMitsi.animalesperdidos.domain.model.Species.DOG,
+                java.util.UUID.randomUUID(), java.util.UUID.randomUUID(), java.util.UUID.randomUUID(),
+                io.github.KevinMitsi.animalesperdidos.domain.model.ReportStatus.LOST,
+                java.time.Instant.parse("2026-08-01T00:00:00Z"), java.time.Instant.parse("2026-08-13T00:00:00Z"),
+                4.5339, -75.6811, 2500d, null, 20);
+
+        new QueryLostPetReportsService(repository, storage).searchPublic(search).toCompletableFuture().join();
+
+        verify(repository).search(criteriaCaptor.capture());
+        var criteria = criteriaCaptor.getValue();
+        assertEquals(2500d, criteria.area().radiusMeters());
+        assertEquals(search.departmentId(), criteria.departmentId());
+        assertEquals(search.cityId(), criteria.cityId());
+        assertEquals(search.from(), criteria.from());
+        assertFalse(criteria.exactLocation());
+        assertEquals(21, criteria.limit());
+    }
+
+    @Test
+    void rejectsIncompleteRadiusWithoutQueryingRepository() {
+        QueryLostPetReportsUseCase.Search search = new QueryLostPetReportsUseCase.Search(
+                null, null, null, null, null, null, null, 4.53, null, 1000d, null, 20);
+        assertThrows(io.github.KevinMitsi.animalesperdidos.application.exception.BusinessRuleViolation.class,
+                () -> new QueryLostPetReportsService(repository, storage).searchPublic(search));
+        verifyNoInteractions(repository, storage);
     }
 }

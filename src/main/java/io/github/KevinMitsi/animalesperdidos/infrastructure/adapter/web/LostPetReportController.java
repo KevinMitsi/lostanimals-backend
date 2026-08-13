@@ -1,8 +1,6 @@
 package io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web;
 
 import io.github.KevinMitsi.animalesperdidos.application.port.in.*;
-import io.github.KevinMitsi.animalesperdidos.domain.model.ReportStatus;
-import io.github.KevinMitsi.animalesperdidos.domain.model.Species;
 import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto.*;
 import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.mapper.LostPetReportWebMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
-import java.net.URI;
 import java.util.UUID;
 
 @RestController
@@ -31,13 +28,15 @@ public class LostPetReportController {
     private final QueryLostPetReportsUseCase queries;
     private final ManageLostPetReportUseCase management;
     private final LostPetReportWebMapper mapper;
+    private final AuthenticatedUserResolver authenticatedUser;
+    private final CreationHttpResponseFactory responses;
 
     @PostMapping("/image-uploads")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Create a short-lived direct S3 upload URL")
     public Mono<PreparedImageUploadResponse> prepareUpload(@AuthenticationPrincipal Jwt jwt,
                                                             @Valid @RequestBody PrepareImageUploadRequest request) {
-        return Mono.fromCompletionStage(prepareUpload.prepare(mapper.toCommand(request, owner(jwt))))
+        return Mono.fromCompletionStage(prepareUpload.prepare(mapper.toCommand(request, authenticatedUser.id(jwt))))
                 .map(mapper::toResponse);
     }
 
@@ -47,12 +46,8 @@ public class LostPetReportController {
             responses = {@ApiResponse(responseCode = "201", description = "Report published")})
     public Mono<ResponseEntity<CreateLostPetReportResponse>> create(@AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody CreateLostPetReportRequest request, UriComponentsBuilder uriBuilder) {
-        return Mono.fromCompletionStage(createReport.report(mapper.toCommand(request, owner(jwt))))
-                .map(result -> {
-                    URI location = uriBuilder.path("/api/v1/lost-pet-reports/{id}")
-                            .buildAndExpand(result.reportId()).toUri();
-                    return ResponseEntity.created(location).body(mapper.toResponse(result));
-                });
+        return Mono.fromCompletionStage(createReport.report(mapper.toCommand(request, authenticatedUser.id(jwt))))
+                .map(result -> responses.lostPet(result, uriBuilder));
     }
 
     @GetMapping("/{reportId}")
@@ -64,7 +59,7 @@ public class LostPetReportController {
     @GetMapping
     @Operation(summary = "Search public reports with cursor pagination")
     public Mono<LostPetReportPageResponse> search(@Valid @ModelAttribute ReportSearchRequest request) {
-        return Mono.fromCompletionStage(queries.searchPublic(toSearch(request))).map(mapper::toResponse);
+        return Mono.fromCompletionStage(queries.searchPublic(mapper.toSearch(request))).map(mapper::toResponse);
     }
 
     @GetMapping("/mine")
@@ -72,7 +67,7 @@ public class LostPetReportController {
     @Operation(summary = "List the authenticated user's reports with exact coordinates")
     public Mono<LostPetReportPageResponse> mine(@AuthenticationPrincipal Jwt jwt,
                                                 @Valid @ModelAttribute ReportSearchRequest request) {
-        return Mono.fromCompletionStage(queries.mine(owner(jwt), toSearch(request))).map(mapper::toResponse);
+        return Mono.fromCompletionStage(queries.mine(authenticatedUser.id(jwt), mapper.toSearch(request))).map(mapper::toResponse);
     }
 
     @PutMapping("/{reportId}")
@@ -81,7 +76,7 @@ public class LostPetReportController {
     @Operation(summary = "Edit an active report owned by the authenticated user")
     public Mono<Void> edit(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID reportId,
                            @Valid @RequestBody EditLostPetReportRequest request) {
-        return Mono.fromCompletionStage(management.edit(owner(jwt), reportId, mapper.toCommand(request)));
+        return Mono.fromCompletionStage(management.edit(authenticatedUser.id(jwt), reportId, mapper.toCommand(request)));
     }
 
     @PatchMapping("/{reportId}/status")
@@ -90,8 +85,8 @@ public class LostPetReportController {
     @Operation(summary = "Mark a report as reunited/closed, or reopen it within 30 days")
     public Mono<Void> close(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID reportId,
                             @Valid @RequestBody CloseLostPetReportRequest request) {
-        return Mono.fromCompletionStage(management.close(owner(jwt), reportId,
-                ReportStatus.valueOf(request.status().name())));
+        return Mono.fromCompletionStage(management.close(authenticatedUser.id(jwt), reportId,
+                mapper.toStatus(request.status())));
     }
 
     @PostMapping("/{reportId}/images")
@@ -100,8 +95,8 @@ public class LostPetReportController {
     @Operation(summary = "Attach a directly uploaded image to an owned report")
     public Mono<AttachedImageResponse> addImage(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID reportId,
                                                 @Valid @RequestBody AttachImageRequest request) {
-        return Mono.fromCompletionStage(management.addImage(owner(jwt), reportId, request.objectKey()))
-                .map(AttachedImageResponse::new);
+        return Mono.fromCompletionStage(management.addImage(authenticatedUser.id(jwt), reportId, request.objectKey()))
+                .map(responses::attachedImage);
     }
 
     @DeleteMapping("/{reportId}/images/{imageId}")
@@ -110,7 +105,7 @@ public class LostPetReportController {
     @Operation(summary = "Remove an image while retaining at least one")
     public Mono<Void> removeImage(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID reportId,
                                   @PathVariable UUID imageId) {
-        return Mono.fromCompletionStage(management.removeImage(owner(jwt), reportId, imageId));
+        return Mono.fromCompletionStage(management.removeImage(authenticatedUser.id(jwt), reportId, imageId));
     }
 
     @PutMapping("/{reportId}/images/{imageId}/primary")
@@ -119,17 +114,7 @@ public class LostPetReportController {
     @Operation(summary = "Select the primary report image")
     public Mono<Void> setPrimary(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID reportId,
                                  @PathVariable UUID imageId) {
-        return Mono.fromCompletionStage(management.setPrimaryImage(owner(jwt), reportId, imageId));
+        return Mono.fromCompletionStage(management.setPrimaryImage(authenticatedUser.id(jwt), reportId, imageId));
     }
 
-    private QueryLostPetReportsUseCase.Search toSearch(ReportSearchRequest request) {
-        ReportCursorDecoder.Cursor cursor = ReportCursorDecoder.decode(request.cursor());
-        return new QueryLostPetReportsUseCase.Search(
-                request.species() == null ? null : Species.valueOf(request.species().name()),
-                request.neighborhoodId(),
-                request.status() == null ? null : ReportStatus.valueOf(request.status().name()),
-                cursor.createdAt(), cursor.id(), request.limit());
-    }
-
-    private static UUID owner(Jwt jwt) { return UUID.fromString(jwt.getSubject()); }
 }

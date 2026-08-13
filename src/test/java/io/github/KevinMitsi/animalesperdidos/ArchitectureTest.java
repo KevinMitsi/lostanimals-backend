@@ -19,4 +19,9 @@ class ArchitectureTest {
     static final ArchRule application_does_not_depend_on_infrastructure = noClasses()
             .that().resideInAPackage("..application..")
             .should().dependOnClassesThat().resideInAPackage("..infrastructure..");
+
+    @ArchTest
+    static final ArchRule controllers_only_depend_on_input_boundaries = noClasses()
+            .that().haveSimpleNameEndingWith("Controller")
+            .should().dependOnClassesThat().resideInAnyPackage("..application.service..", "..application.port.out..", "..domain..");
 }

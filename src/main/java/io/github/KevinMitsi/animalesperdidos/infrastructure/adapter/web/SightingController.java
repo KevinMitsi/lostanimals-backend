@@ -16,7 +16,6 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
-import java.net.URI;
 import java.util.UUID;
 
 @RestController
@@ -29,13 +28,15 @@ public class SightingController {
     private final QuerySightingsUseCase queries;
     private final ManageSightingUseCase management;
     private final SightingWebMapper mapper;
+    private final AuthenticatedUserResolver authenticatedUser;
+    private final CreationHttpResponseFactory responses;
 
     @PostMapping("/image-uploads")
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Create a short-lived direct S3 upload URL for a sighting")
     public Mono<PreparedImageUploadResponse> prepareUpload(@AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody PrepareImageUploadRequest request) {
-        return Mono.fromCompletionStage(uploads.prepare(mapper.toCommand(request, actor(jwt)))).map(mapper::toResponse);
+        return Mono.fromCompletionStage(uploads.prepare(mapper.toCommand(request, authenticatedUser.id(jwt)))).map(mapper::toResponse);
     }
 
     @PostMapping
@@ -45,12 +46,8 @@ public class SightingController {
                     @ApiResponse(responseCode = "200", description = "Possible duplicate; confirmation required")})
     public Mono<ResponseEntity<CreateSightingResponse>> create(@AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody CreateSightingRequest request, UriComponentsBuilder uriBuilder) {
-        return Mono.fromCompletionStage(creation.create(mapper.toCommand(request, actor(jwt)))).map(result -> {
-            CreateSightingResponse body = mapper.toResponse(result);
-            if (!result.created()) return ResponseEntity.ok(body);
-            URI location = uriBuilder.path("/api/v1/sightings/{id}").buildAndExpand(result.sightingId()).toUri();
-            return ResponseEntity.created(location).body(body);
-        });
+        return Mono.fromCompletionStage(creation.create(mapper.toCommand(request, authenticatedUser.id(jwt))))
+                .map(result -> responses.sighting(result, uriBuilder));
     }
 
     @GetMapping("/{sightingId}")
@@ -62,7 +59,7 @@ public class SightingController {
     @GetMapping
     @Operation(summary = "Search public sightings with cursor pagination")
     public Mono<SightingPageResponse> search(@Valid @ModelAttribute SightingSearchRequest request) {
-        return Mono.fromCompletionStage(queries.searchPublic(toSearch(request))).map(mapper::toResponse);
+        return Mono.fromCompletionStage(queries.searchPublic(mapper.toSearch(request))).map(mapper::toResponse);
     }
 
     @GetMapping("/mine")
@@ -70,7 +67,7 @@ public class SightingController {
     @Operation(summary = "List the authenticated user's sightings with exact coordinates")
     public Mono<SightingPageResponse> mine(@AuthenticationPrincipal Jwt jwt,
             @Valid @ModelAttribute SightingSearchRequest request) {
-        return Mono.fromCompletionStage(queries.mine(actor(jwt), toSearch(request))).map(mapper::toResponse);
+        return Mono.fromCompletionStage(queries.mine(authenticatedUser.id(jwt), mapper.toSearch(request))).map(mapper::toResponse);
     }
 
     @PutMapping("/{sightingId}")
@@ -79,7 +76,7 @@ public class SightingController {
     @Operation(summary = "Edit an active sighting owned by the authenticated user")
     public Mono<Void> edit(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID sightingId,
             @Valid @RequestBody EditSightingRequest request) {
-        return Mono.fromCompletionStage(management.edit(actor(jwt), sightingId, mapper.toCommand(request)));
+        return Mono.fromCompletionStage(management.edit(authenticatedUser.id(jwt), sightingId, mapper.toCommand(request)));
     }
 
     @PatchMapping("/{sightingId}/close")
@@ -87,7 +84,7 @@ public class SightingController {
     @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "Close an owned sighting")
     public Mono<Void> close(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID sightingId) {
-        return Mono.fromCompletionStage(management.close(actor(jwt), sightingId));
+        return Mono.fromCompletionStage(management.close(authenticatedUser.id(jwt), sightingId));
     }
 
     @PostMapping("/{sightingId}/images")
@@ -96,8 +93,8 @@ public class SightingController {
     @Operation(summary = "Attach a directly uploaded image to an owned sighting")
     public Mono<AttachedImageResponse> addImage(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID sightingId,
             @Valid @RequestBody AttachImageRequest request) {
-        return Mono.fromCompletionStage(management.addImage(actor(jwt), sightingId, request.objectKey()))
-                .map(AttachedImageResponse::new);
+        return Mono.fromCompletionStage(management.addImage(authenticatedUser.id(jwt), sightingId, request.objectKey()))
+                .map(responses::attachedImage);
     }
 
     @DeleteMapping("/{sightingId}/images/{imageId}")
@@ -106,7 +103,7 @@ public class SightingController {
     @Operation(summary = "Remove an image while retaining at least one")
     public Mono<Void> removeImage(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID sightingId,
             @PathVariable UUID imageId) {
-        return Mono.fromCompletionStage(management.removeImage(actor(jwt), sightingId, imageId));
+        return Mono.fromCompletionStage(management.removeImage(authenticatedUser.id(jwt), sightingId, imageId));
     }
 
     @PutMapping("/{sightingId}/images/{imageId}/primary")
@@ -115,17 +112,7 @@ public class SightingController {
     @Operation(summary = "Select the primary sighting image")
     public Mono<Void> setPrimary(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID sightingId,
             @PathVariable UUID imageId) {
-        return Mono.fromCompletionStage(management.setPrimary(actor(jwt), sightingId, imageId));
+        return Mono.fromCompletionStage(management.setPrimary(authenticatedUser.id(jwt), sightingId, imageId));
     }
 
-    private static QuerySightingsUseCase.Search toSearch(SightingSearchRequest request) {
-        ReportCursorDecoder.Cursor cursor = ReportCursorDecoder.decode(request.cursor());
-        return new QuerySightingsUseCase.Search(
-                request.species() == null ? null : Species.valueOf(request.species().name()),
-                request.neighborhoodId(),
-                request.status() == null ? null : SightingStatus.valueOf(request.status().name()),
-                cursor.createdAt(), cursor.id(), request.limit());
-    }
-
-    private static UUID actor(Jwt jwt) { return UUID.fromString(jwt.getSubject()); }
 }

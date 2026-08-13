@@ -75,6 +75,8 @@ La gestión completa de reportes, carga directa privada a S3, sanitización de i
 
 La publicación, detección PostGIS de posibles duplicados y gestión de avistamientos están en [docs/FASE_3_AVISTAMIENTOS.md](docs/FASE_3_AVISTAMIENTOS.md).
 
+La búsqueda por radio, filtros territoriales, privacidad contra triangulación y catálogo geográfico están en [docs/FASE_4_BUSQUEDA_GEOESPACIAL.md](docs/FASE_4_BUSQUEDA_GEOESPACIAL.md).
+
 ## Reportes de mascotas
 
 `POST /api/v1/lost-pet-reports`, tipo `application/json` después de la carga directa a S3:
@@ -93,4 +95,4 @@ La configuración de Turnstile, WAF, rate limiting y aislamiento del origen est�
 - Si persiste el reporte falla, el caso de uso compensa eliminando de S3 las imágenes subidas.
 - Los datos de contacto están separados y no aparecen en el contrato público.
 
-La siguiente vertical es búsqueda geoespacial por radio con PostGIS y filtros territoriales.
+La siguiente vertical es contacto seguro entre reportantes, con consentimiento y protección de datos personales.

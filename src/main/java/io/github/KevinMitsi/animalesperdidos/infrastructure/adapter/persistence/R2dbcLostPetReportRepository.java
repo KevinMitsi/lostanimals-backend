@@ -97,12 +97,28 @@ public class R2dbcLostPetReportRepository implements LostPetReportRepository {
         StringBuilder where = new StringBuilder(" WHERE 1=1");
         if (criteria.ownerId() != null) where.append(" AND r.owner_id=:ownerId");
         if (criteria.species() != null) where.append(" AND r.species=:species");
+        if (criteria.departmentId() != null) where.append(" AND c.department_id=:departmentId");
+        if (criteria.cityId() != null) where.append(" AND n.city_id=:cityId");
         if (criteria.neighborhoodId() != null) where.append(" AND r.neighborhood_id=:neighborhoodId");
         if (criteria.status() != null) where.append(" AND r.status=:status");
+        if (criteria.from() != null) where.append(" AND r.disappeared_at>=:from");
+        if (criteria.to() != null) where.append(" AND r.disappeared_at<=:to");
+        if (criteria.area() != null) where.append(criteria.exactLocation() ? """
+                 AND ST_DWithin(r.last_seen,
+                   ST_SetSRID(ST_MakePoint(:centerLongitude,:centerLatitude),4326)::geography,:radiusMeters)
+                """ : """
+                 AND ST_DWithin(r.last_seen,
+                   ST_SetSRID(ST_MakePoint(:centerLongitude,:centerLatitude),4326)::geography,:prefilterRadius)
+                 AND ST_DWithin(ST_SetSRID(ST_MakePoint(
+                   round(ST_X(r.last_seen::geometry)::numeric,3)::double precision,
+                   round(ST_Y(r.last_seen::geometry)::numeric,3)::double precision),4326)::geography,
+                   ST_SetSRID(ST_MakePoint(:centerLongitude,:centerLatitude),4326)::geography,:radiusMeters)
+                """);
         if (criteria.cursorCreatedAt() != null && criteria.cursorId() != null) {
             where.append(" AND (r.created_at,r.id)<(:cursorCreatedAt,:cursorId)");
         }
-        String idsSql = "SELECT r.id FROM lost_pet_report r" + where
+        String idsSql = "SELECT r.id FROM lost_pet_report r JOIN neighborhood n ON n.id=r.neighborhood_id"
+                + " JOIN city c ON c.id=n.city_id" + where
                 + " ORDER BY r.created_at DESC,r.id DESC LIMIT :limit";
         DatabaseClient.GenericExecuteSpec ids = databaseClient.sql(idsSql);
         ids = bindCriteria(ids, criteria).bind("limit", criteria.limit());
@@ -117,8 +133,18 @@ public class R2dbcLostPetReportRepository implements LostPetReportRepository {
     private DatabaseClient.GenericExecuteSpec bindCriteria(DatabaseClient.GenericExecuteSpec spec, SearchCriteria criteria) {
         if (criteria.ownerId() != null) spec = spec.bind("ownerId", criteria.ownerId());
         if (criteria.species() != null) spec = spec.bind("species", criteria.species().name());
+        if (criteria.departmentId() != null) spec = spec.bind("departmentId", criteria.departmentId());
+        if (criteria.cityId() != null) spec = spec.bind("cityId", criteria.cityId());
         if (criteria.neighborhoodId() != null) spec = spec.bind("neighborhoodId", criteria.neighborhoodId());
         if (criteria.status() != null) spec = spec.bind("status", criteria.status().name());
+        if (criteria.from() != null) spec = spec.bind("from", criteria.from());
+        if (criteria.to() != null) spec = spec.bind("to", criteria.to());
+        if (criteria.area() != null) spec = spec.bind("centerLongitude", criteria.area().center().longitude())
+                .bind("centerLatitude", criteria.area().center().latitude())
+                .bind("radiusMeters", criteria.area().radiusMeters());
+        if (criteria.area() != null && !criteria.exactLocation()) {
+            spec = spec.bind("prefilterRadius", criteria.area().radiusMeters() + 100d);
+        }
         if (criteria.cursorCreatedAt() != null && criteria.cursorId() != null) {
             spec = spec.bind("cursorCreatedAt", criteria.cursorCreatedAt()).bind("cursorId", criteria.cursorId());
         }

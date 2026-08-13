@@ -78,14 +78,37 @@ public class R2dbcSightingRepository implements SightingRepository {
         StringBuilder where=new StringBuilder(" WHERE 1=1");
         if(c.reporterId()!=null)where.append(" AND s.reporter_id=:reporter");
         if(c.species()!=null)where.append(" AND s.species=:species");
+        if(c.departmentId()!=null)where.append(" AND city.department_id=:department");
+        if(c.cityId()!=null)where.append(" AND neighborhood.city_id=:city");
         if(c.neighborhoodId()!=null)where.append(" AND s.neighborhood_id=:neighborhood");
         if(c.status()!=null)where.append(" AND s.status=:status");
+        if(c.from()!=null)where.append(" AND s.observed_at>=:from");
+        if(c.to()!=null)where.append(" AND s.observed_at<=:to");
+        if(c.area()!=null)where.append(c.exactLocation() ? """
+                 AND ST_DWithin(s.location,
+                   ST_SetSRID(ST_MakePoint(:centerLongitude,:centerLatitude),4326)::geography,:radius)
+                """ : """
+                 AND ST_DWithin(s.location,
+                   ST_SetSRID(ST_MakePoint(:centerLongitude,:centerLatitude),4326)::geography,:prefilterRadius)
+                 AND ST_DWithin(ST_SetSRID(ST_MakePoint(
+                   round(ST_X(s.location::geometry)::numeric,3)::double precision,
+                   round(ST_Y(s.location::geometry)::numeric,3)::double precision),4326)::geography,
+                   ST_SetSRID(ST_MakePoint(:centerLongitude,:centerLatitude),4326)::geography,:radius)
+                """);
         if(c.cursorCreatedAt()!=null&&c.cursorId()!=null)where.append(" AND (s.created_at,s.id)<(:cursorAt,:cursorId)");
-        var spec=databaseClient.sql("SELECT s.id FROM sighting s"+where+" ORDER BY s.created_at DESC,s.id DESC LIMIT :limit");
+        var spec=databaseClient.sql("SELECT s.id FROM sighting s JOIN neighborhood ON neighborhood.id=s.neighborhood_id"
+                +" JOIN city ON city.id=neighborhood.city_id"+where+" ORDER BY s.created_at DESC,s.id DESC LIMIT :limit");
         if(c.reporterId()!=null)spec=spec.bind("reporter",c.reporterId());
         if(c.species()!=null)spec=spec.bind("species",c.species().name());
+        if(c.departmentId()!=null)spec=spec.bind("department",c.departmentId());
+        if(c.cityId()!=null)spec=spec.bind("city",c.cityId());
         if(c.neighborhoodId()!=null)spec=spec.bind("neighborhood",c.neighborhoodId());
         if(c.status()!=null)spec=spec.bind("status",c.status().name());
+        if(c.from()!=null)spec=spec.bind("from",c.from());
+        if(c.to()!=null)spec=spec.bind("to",c.to());
+        if(c.area()!=null)spec=spec.bind("centerLongitude",c.area().center().longitude())
+                .bind("centerLatitude",c.area().center().latitude()).bind("radius",c.area().radiusMeters());
+        if(c.area()!=null&&!c.exactLocation())spec=spec.bind("prefilterRadius",c.area().radiusMeters()+100d);
         if(c.cursorCreatedAt()!=null&&c.cursorId()!=null)spec=spec.bind("cursorAt",c.cursorCreatedAt()).bind("cursorId",c.cursorId());
         return spec.bind("limit",c.limit()).map((row,meta)->row.get("id",UUID.class)).all().collectList()
                 .flatMap(ids -> ids.isEmpty()?Mono.<List<Sighting>>just(List.of()):aggregate(databaseClient.sql(

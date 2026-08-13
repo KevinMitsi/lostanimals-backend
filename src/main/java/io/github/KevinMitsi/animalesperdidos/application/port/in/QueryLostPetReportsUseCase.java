@@ -13,8 +13,9 @@ public interface QueryLostPetReportsUseCase {
     CompletionStage<Page> searchPublic(Search command);
     CompletionStage<Page> mine(UUID ownerId, Search command);
 
-    record Search(Species species, UUID neighborhoodId, ReportStatus status,
-                  Instant cursorCreatedAt, UUID cursorId, int limit) { }
+    record Search(Species species, UUID departmentId, UUID cityId, UUID neighborhoodId, ReportStatus status,
+                  Instant from, Instant to, Double latitude, Double longitude, Double radiusMeters,
+                  String cursor, int limit) { }
 
     record Page(List<ReportView> items, String nextCursor) { }
 

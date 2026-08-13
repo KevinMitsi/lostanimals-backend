@@ -45,6 +45,7 @@ public class SecurityConfiguration {
                         .pathMatchers(HttpMethod.GET, "/api/v1/lost-pet-reports", "/api/v1/lost-pet-reports/*").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/v1/sightings/mine").authenticated()
                         .pathMatchers(HttpMethod.GET, "/api/v1/sightings", "/api/v1/sightings/*").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/v1/geography/**").permitAll()
                         .anyExchange().authenticated())
                 .oauth2ResourceServer(resourceServer -> resourceServer.jwt(Customizer.withDefaults()))
                 .build();

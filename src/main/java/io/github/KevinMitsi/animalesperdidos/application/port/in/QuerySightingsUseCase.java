@@ -9,8 +9,9 @@ public interface QuerySightingsUseCase {
     CompletionStage<View> getPublic(UUID id);
     CompletionStage<Page> searchPublic(Search search);
     CompletionStage<Page> mine(UUID reporterId, Search search);
-    record Search(Species species, UUID neighborhoodId, SightingStatus status,
-                  Instant cursorCreatedAt, UUID cursorId, int limit) { }
+    record Search(Species species, UUID departmentId, UUID cityId, UUID neighborhoodId, SightingStatus status,
+                  Instant from, Instant to, Double latitude, Double longitude, Double radiusMeters,
+                  String cursor, int limit) { }
     record Page(List<View> items, String nextCursor) { }
     record View(UUID id, Species species, String description, Instant observedAt, double latitude,
                 double longitude, UUID neighborhoodId, SightingStatus status, List<ImageView> images,

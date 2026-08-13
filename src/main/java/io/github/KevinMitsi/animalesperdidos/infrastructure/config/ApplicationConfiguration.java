@@ -62,6 +62,11 @@ public class ApplicationConfiguration {
     }
 
     @Bean
+    QueryGeographicCatalogUseCase queryGeographicCatalogUseCase(GeographicCatalogRepository repository) {
+        return new QueryGeographicCatalogService(repository);
+    }
+
+    @Bean
     RegisterUserUseCase registerUserUseCase(UserRepository repository, PasswordHasherPort passwordHasher,
                                              BotVerificationPort botVerification, Clock clock,
                                              AccountTokenRepository accountTokens, OpaqueTokenPort opaqueTokens,

@@ -49,13 +49,7 @@ public final class AccountLifecycleService implements VerifyEmailUseCase, Passwo
     public CompletionStage<Void> verify(String rawToken) {
         Instant now = clock.instant();
         return tokens.consume(opaqueTokens.hash(rawToken), AccountToken.Type.EMAIL_VERIFICATION, now)
-                .thenCompose(optional -> {
-                    if (optional.isEmpty()) return failed(new InvalidOrExpiredToken());
-                    return users.findById(optional.get().userId()).thenCompose(user -> {
-                        if (user.isEmpty()) return failed(new InvalidOrExpiredToken());
-                        return users.update(user.get().verifyEmail(now)).thenApply(ignored -> null);
-                    });
-                });
+                .thenCompose(optional -> optional.map(accountToken -> users.findById(accountToken.userId()).thenCompose(user -> user.<CompletionStage<Void>>map(value -> users.update(value.verifyEmail(now)).thenApply(ignored -> null)).orElseGet(() -> failed(new InvalidOrExpiredToken())))).orElseGet(() -> failed(new InvalidOrExpiredToken())));
     }
 
     @Override

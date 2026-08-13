@@ -7,10 +7,8 @@ import io.github.KevinMitsi.animalesperdidos.application.port.out.LostPetReportR
 import io.github.KevinMitsi.animalesperdidos.domain.model.LostPetImage;
 import io.github.KevinMitsi.animalesperdidos.domain.model.LostPetReport;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -45,17 +43,21 @@ public final class QueryLostPetReportsService implements QueryLostPetReportsUseC
 
     private CompletionStage<Page> search(UUID ownerId, Search command, boolean exactLocation) {
         int limit = Math.max(1, Math.min(command.limit(), 50));
+        SearchCriteriaPolicy.validateRange(command.from(), command.to());
+        var area = SearchCriteriaPolicy.area(command.latitude(), command.longitude(), command.radiusMeters());
+        var cursor = SearchCriteriaPolicy.decode(command.cursor());
         LostPetReportRepository.SearchCriteria criteria = new LostPetReportRepository.SearchCriteria(ownerId,
-                command.species(), command.neighborhoodId(), command.status(), command.cursorCreatedAt(),
-                command.cursorId(), limit + 1);
+                command.species(), command.departmentId(), command.cityId(), command.neighborhoodId(), command.status(),
+                command.from(), command.to(), area, exactLocation, cursor.createdAt(), cursor.id(), limit + 1);
         return repository.search(criteria).thenCompose(found -> {
             boolean hasNext = found.size() > limit;
             List<LostPetReport> selected = found.stream().limit(limit).toList();
             List<CompletionStage<ReportView>> views = selected.stream()
                     .map(report -> toView(report, exactLocation)).toList();
             return sequence(views).thenApply(items -> {
-                String cursor = hasNext && !selected.isEmpty() ? encodeCursor(selected.getLast()) : null;
-                return new Page(items, cursor);
+                String nextCursor = hasNext && !selected.isEmpty()
+                        ? SearchCriteriaPolicy.encode(selected.getLast().createdAt(), selected.getLast().id()) : null;
+                return new Page(items, nextCursor);
             });
         });
     }
@@ -75,11 +77,6 @@ public final class QueryLostPetReportsService implements QueryLostPetReportsUseC
     }
 
     private static double approximate(double coordinate) { return Math.round(coordinate * 1000d) / 1000d; }
-
-    private static String encodeCursor(LostPetReport report) {
-        String raw = report.createdAt() + "|" + report.id();
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
-    }
 
     private static <T> CompletionStage<List<T>> sequence(List<? extends CompletionStage<T>> stages) {
         CompletableFuture<?>[] futures = stages.stream().map(CompletionStage::toCompletableFuture)

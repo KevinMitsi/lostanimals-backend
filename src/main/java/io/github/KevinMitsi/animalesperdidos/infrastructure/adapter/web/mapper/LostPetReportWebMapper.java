@@ -6,6 +6,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 import java.util.UUID;
+import io.github.KevinMitsi.animalesperdidos.domain.model.ReportStatus;
 
 @Mapper(componentModel = "spring")
 public interface LostPetReportWebMapper {
@@ -16,6 +17,10 @@ public interface LostPetReportWebMapper {
     PrepareReportImageUploadUseCase.Command toCommand(PrepareImageUploadRequest request, UUID ownerId);
 
     ManageLostPetReportUseCase.Edit toCommand(EditLostPetReportRequest request);
+
+    QueryLostPetReportsUseCase.Search toSearch(ReportSearchRequest request);
+
+    ReportStatus toStatus(ReportStatusDto status);
 
     @Mapping(target = "id", source = "reportId")
     CreateLostPetReportResponse toResponse(ReportLostPetUseCase.Result result);

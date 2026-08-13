@@ -15,6 +15,7 @@ public interface SightingRepository {
     CompletionStage<List<Sighting>> search(SearchCriteria criteria);
 
     record DuplicateCandidate(UUID id, double distanceMeters, Instant observedAt) { }
-    record SearchCriteria(UUID reporterId, Species species, UUID neighborhoodId, SightingStatus status,
-                          Instant cursorCreatedAt, UUID cursorId, int limit) { }
+    record SearchCriteria(UUID reporterId, Species species, UUID departmentId, UUID cityId, UUID neighborhoodId,
+                          SightingStatus status, Instant from, Instant to, GeoSearchArea area,
+                          boolean exactLocation, Instant cursorCreatedAt, UUID cursorId, int limit) { }
 }
