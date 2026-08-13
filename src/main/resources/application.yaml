@@ -39,9 +39,17 @@ app:
       bucket: ${S3_BUCKET:animales-perdidos-dev}
       region: ${AWS_REGION:us-east-1}
   notifications:
-    frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
-    email:
-      enabled: ${EMAIL_NOTIFICATIONS_ENABLED:false}
+    aws:
+      enabled: ${AWS_NOTIFICATIONS_ENABLED:false}
+      region: ${AWS_REGION:us-east-1}
+      queue-url: ${AWS_NOTIFICATION_QUEUE_URL:}
+      sender-email: ${AWS_SES_SENDER_EMAIL:}
+      frontend-base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
+      platform-application-arn: ${AWS_SNS_PLATFORM_APPLICATION_ARN:}
+      max-messages: ${AWS_NOTIFICATION_MAX_MESSAGES:10}
+      wait-time-seconds: ${AWS_NOTIFICATION_WAIT_SECONDS:20}
+      visibility-timeout-seconds: ${AWS_NOTIFICATION_VISIBILITY_SECONDS:60}
+      poll-delay-ms: ${AWS_NOTIFICATION_POLL_DELAY_MS:1000}
 
 springdoc:
   swagger-ui:

@@ -32,6 +32,15 @@ class ConversationServiceTest {
                 Clock.fixed(NOW,ZoneOffset.UTC)).send(UUID.randomUUID(),conversation.id(),"Hola").toCompletableFuture().join());
         assertInstanceOf(io.github.KevinMitsi.animalesperdidos.application.exception.ResourceNotFound.class,error.getCause());
     }
+    @Test void pollingReturnsCheckpointEvenWithoutAnotherPage(){
+        UUID actor=UUID.randomUUID(),other=UUID.randomUUID(); Conversation conversation=conversation(actor,other);
+        Message message=new Message(UUID.randomUUID(),conversation.id(),other,"Información",NOW);
+        when(contacts.findConversation(conversation.id())).thenReturn(done(Optional.of(conversation)));
+        when(contacts.messages(conversation.id(),null,null,50)).thenReturn(done(List.of(message)));
+        var page=new ConversationService(contacts,users,Clock.fixed(NOW,ZoneOffset.UTC))
+                .messages(actor,conversation.id(),null,50).toCompletableFuture().join();
+        assertEquals(1,page.items().size()); assertNotNull(page.nextAfter());
+    }
     private static Conversation conversation(UUID a,UUID b){return Conversation.open(UUID.randomUUID(),UUID.randomUUID(),a,b,NOW);}
     private static <T> CompletableFuture<T> done(T value){return CompletableFuture.completedFuture(value);}
 }

@@ -21,8 +21,8 @@ public class AdminController {
     private final AdminWebMapper adminMapper; private final ModerationWebMapper moderationMapper;
     private final AuthenticatedUserResolver authenticatedUser;
     @GetMapping("/service-areas") @Operation(summary="List cities and their publication availability")
-    public Mono<List<ServiceAreaResponse>> serviceAreas(){
-        return Mono.fromCompletionStage(administration.serviceAreas()).map(adminMapper::toResponses);
+    public Mono<List<ServiceAreaResponse>> serviceAreas(@AuthenticationPrincipal Jwt jwt){
+        return Mono.fromCompletionStage(administration.serviceAreas(authenticatedUser.id(jwt))).map(adminMapper::toResponses);
     }
     @PutMapping("/service-areas/{cityId}") @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary="Enable or disable a city without changing publication use cases")
@@ -37,8 +37,8 @@ public class AdminController {
         return Mono.fromCompletionStage(administration.changeRole(authenticatedUser.id(jwt),userId,adminMapper.toRole(request.role())));
     }
     @GetMapping("/reunion-reviews") @Operation(summary="List pending reunion verifications")
-    public Mono<List<ReunionReviewResponse>> reunionReviews(){
-        return Mono.fromCompletionStage(reunions.pending()).map(moderationMapper::toReunionResponses);
+    public Mono<List<ReunionReviewResponse>> reunionReviews(@AuthenticationPrincipal Jwt jwt){
+        return Mono.fromCompletionStage(reunions.pending(authenticatedUser.id(jwt))).map(moderationMapper::toReunionResponses);
     }
     @PatchMapping("/reunion-reviews/{reviewId}") @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary="Approve or reject a reunion as administrator")

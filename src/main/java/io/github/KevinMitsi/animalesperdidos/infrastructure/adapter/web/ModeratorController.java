@@ -20,8 +20,8 @@ public class ModeratorController {
     private final ReunionModerationUseCase reunions; private final ContentModerationUseCase content;
     private final ModerationWebMapper mapper; private final AuthenticatedUserResolver authenticatedUser;
     @GetMapping("/reunion-reviews") @Operation(summary="List pending reunion verifications including the owner's phone")
-    public Mono<List<ReunionReviewResponse>> reunionReviews(){
-        return Mono.fromCompletionStage(reunions.pending()).map(mapper::toReunionResponses);
+    public Mono<List<ReunionReviewResponse>> reunionReviews(@AuthenticationPrincipal Jwt jwt){
+        return Mono.fromCompletionStage(reunions.pending(authenticatedUser.id(jwt))).map(mapper::toReunionResponses);
     }
     @PatchMapping("/reunion-reviews/{reviewId}") @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary="Approve or reject a reunion after human verification")
@@ -30,8 +30,8 @@ public class ModeratorController {
         return Mono.fromCompletionStage(reunions.decide(authenticatedUser.id(jwt),reviewId,request.approved(),request.note()));
     }
     @GetMapping("/conversation-reports") @Operation(summary="List pending conversation reports")
-    public Mono<List<ConversationReportResponse>> conversationReports(){
-        return Mono.fromCompletionStage(content.pendingReports()).map(mapper::toReportResponses);
+    public Mono<List<ConversationReportResponse>> conversationReports(@AuthenticationPrincipal Jwt jwt){
+        return Mono.fromCompletionStage(content.pendingReports(authenticatedUser.id(jwt))).map(mapper::toReportResponses);
     }
     @PatchMapping("/conversation-reports/{reportId}") @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary="Resolve or dismiss a conversation report")

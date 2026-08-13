@@ -7,7 +7,7 @@ import java.util.concurrent.CompletionStage;
 
 public interface ReunionModerationUseCase {
     CompletionStage<UUID> request(UUID ownerId, UUID reportId, String note);
-    CompletionStage<List<View>> pending();
+    CompletionStage<List<View>> pending(UUID moderatorId);
     CompletionStage<Void> decide(UUID moderatorId, UUID reviewId, boolean approved, String note);
     record View(UUID id, UUID reportId, UUID ownerId, String ownerName, String ownerPhone,
                 String requestNote, ReunionReview.Status status, Instant createdAt) { }

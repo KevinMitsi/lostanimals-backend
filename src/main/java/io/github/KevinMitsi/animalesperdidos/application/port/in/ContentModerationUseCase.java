@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.concurrent.CompletionStage;
 
 public interface ContentModerationUseCase {
-    CompletionStage<List<View>> pendingReports();
+    CompletionStage<List<View>> pendingReports(UUID moderatorId);
     CompletionStage<Void> decide(UUID moderatorId, UUID reportId, boolean resolved);
     record View(UUID id, UUID conversationId, UUID reporterId, String reason, String details,
                 ConversationReport.Status status, Instant createdAt) { }

@@ -51,6 +51,14 @@ class CreateSightingServiceTest {
         verify(repository).save(argThat(s -> s.images().getFirst().objectKey().equals(CLEAN)));
     }
 
+    @Test void rejectsDisabledCityBeforeQueryingDuplicatesOrStorage() {
+        when(serviceAreas.isNeighborhoodEnabled(any())).thenReturn(done(false));
+        var error=assertThrows(java.util.concurrent.CompletionException.class,
+                ()->service.create(command(false)).toCompletableFuture().join());
+        assertInstanceOf(io.github.KevinMitsi.animalesperdidos.application.exception.BusinessRuleViolation.class,error.getCause());
+        verifyNoInteractions(storage); verify(repository,never()).findNearbyDuplicate(any(),any(),any(),any(),anyDouble());
+    }
+
     private static CreateSightingUseCase.Command command(boolean confirm) {
         return new CreateSightingUseCase.Command(REPORTER, Species.DOG, "Visto cerca al parque", NOW.minusSeconds(300),
                 4.5339, -75.6811, UUID.randomUUID(), List.of(STAGING), confirm);

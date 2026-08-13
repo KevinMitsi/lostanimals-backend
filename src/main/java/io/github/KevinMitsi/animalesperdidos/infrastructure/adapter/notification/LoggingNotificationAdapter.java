@@ -12,7 +12,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
 @Component
-@ConditionalOnProperty(name = "app.notifications.email.enabled", havingValue = "false", matchIfMissing = true)
+@ConditionalOnProperty(name = "app.notifications.aws.enabled", havingValue = "false", matchIfMissing = true)
 public class LoggingNotificationAdapter implements NotificationPort, AccountNotificationPort {
     private static final Logger log = LoggerFactory.getLogger(LoggingNotificationAdapter.class);
 

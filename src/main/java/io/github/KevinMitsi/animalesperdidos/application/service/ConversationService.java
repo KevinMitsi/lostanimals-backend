@@ -20,10 +20,10 @@ public final class ConversationService implements ConversationUseCase {
         int safeLimit = Math.max(1, Math.min(limit, 100));
         SearchCriteriaPolicy.Cursor cursor = SearchCriteriaPolicy.decode(after);
         return conversation(actorId, conversationId).thenCompose(ignored -> contacts.messages(conversationId,
-                cursor.createdAt(), cursor.id(), safeLimit + 1)).thenApply(values -> {
-            boolean more = values.size() > safeLimit; List<Message> selected = values.stream().limit(safeLimit).toList();
-            return new MessagePage(selected.stream().map(this::message).toList(), more && !selected.isEmpty()
-                    ? SearchCriteriaPolicy.encode(selected.getLast().createdAt(), selected.getLast().id()) : null);
+                cursor.createdAt(), cursor.id(), safeLimit)).thenApply(values -> {
+            String checkpoint = values.isEmpty() ? after
+                    : SearchCriteriaPolicy.encode(values.getLast().createdAt(), values.getLast().id());
+            return new MessagePage(values.stream().map(this::message).toList(), checkpoint);
         });
     }
     @Override public CompletionStage<UUID> send(UUID actorId, UUID conversationId, String content) {

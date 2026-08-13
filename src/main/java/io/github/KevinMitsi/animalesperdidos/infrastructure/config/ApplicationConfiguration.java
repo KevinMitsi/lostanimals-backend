@@ -87,8 +87,8 @@ public class ApplicationConfiguration {
         return new AdminService(areas, users, clock);
     }
 
-    @Bean ContentModerationUseCase contentModerationUseCase(ModerationRepository moderation, Clock clock) {
-        return new ContentModerationService(moderation, clock);
+    @Bean ContentModerationUseCase contentModerationUseCase(ModerationRepository moderation, UserRepository users, Clock clock) {
+        return new ContentModerationService(moderation, users, clock);
     }
 
     @Bean
@@ -124,5 +124,9 @@ public class ApplicationConfiguration {
                                                  OpaqueTokenPort opaqueTokens, TokenIssuerPort accessTokens,
                                                  Clock clock, SecurityProperties properties) {
         return new RefreshSessionService(sessions, users, opaqueTokens, accessTokens, clock, properties.getRefreshTtl());
+    }
+
+    @Bean ManagePushSubscriptionUseCase managePushSubscriptionUseCase(PushSubscriptionPort subscriptions) {
+        return new ManagePushSubscriptionService(subscriptions);
     }
 }

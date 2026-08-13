@@ -32,7 +32,7 @@ Una solicitud no puede dirigirse a una publicación propia ni crearse si existe 
 | `PATCH` | `/api/v1/conversations/{id}/block` | Bloquear y cerrar |
 | `POST` | `/api/v1/conversations/{id}/reports` | Denunciar conversación |
 
-El polling devuelve hasta 100 mensajes en orden ascendente. El cursor opaco representa `(created_at,id)`. WebSocket podrá implementarse después como otro adaptador sobre los mismos casos de uso y mensajes, sin modificar el dominio.
+El polling devuelve hasta 100 mensajes en orden ascendente. `nextAfter` siempre conserva el último checkpoint conocido —incluso cuando todavía no hay mensajes nuevos— y representa `(created_at,id)` de forma opaca. WebSocket podrá implementarse después como otro adaptador sobre los mismos casos de uso y mensajes, sin modificar el dominio.
 
 ## Reencuentro verificado
 

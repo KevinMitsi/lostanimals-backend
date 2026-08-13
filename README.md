@@ -7,7 +7,7 @@ Backend para ayudar a reunir animales perdidos con sus familias después de una 
 El proyecto aplica arquitectura limpia/hexagonal. Las dependencias siempre apuntan hacia adentro:
 
 ```text
-infrastructure (WebFlux, R2DBC, S3, JavaMail, Flyway)
+infrastructure (WebFlux, R2DBC, S3, SQS, SES, SNS, Flyway)
                  ↓ implementa / invoca puertos
 application (casos de uso y puertos de entrada/salida)
                  ↓
@@ -19,7 +19,7 @@ domain (reglas y modelos Java puros)
 - `infrastructure.adapter.web`: Controller GRASP; traduce HTTP al caso de uso sin contener reglas de negocio.
 - `infrastructure.adapter.persistence`: PostgreSQL/PostGIS mediante R2DBC.
 - `infrastructure.adapter.storage`: implementación S3 de `ImageStoragePort`. Cambiar S3 por otro proveedor solo requiere otro adaptador.
-- `infrastructure.adapter.notification`: JavaMail o logging detrás de `NotificationPort`. Cambiar la librería de correo no modifica el caso de uso.
+- `infrastructure.adapter.notification`: eventos SQS y entrega SES/SNS detrás de puertos. Cambiar los proveedores no modifica los casos de uso.
 - `infrastructure.adapter.security`: BCrypt y Nimbus JWT detrás de puertos de aplicación.
 - `infrastructure.adapter.cloudflare`: validación reactiva de Turnstile detrás de `BotVerificationPort`.
 - `infrastructure.adapter.persistence.entity`: entidades de persistencia separadas del modelo de dominio; MapStruct realiza la conversión.
@@ -42,7 +42,10 @@ DB_USER=postgres
 DB_PASSWORD=postgres
 S3_BUCKET=animales-perdidos-dev
 AWS_REGION=us-east-1
-EMAIL_NOTIFICATIONS_ENABLED=false
+AWS_NOTIFICATIONS_ENABLED=true
+AWS_NOTIFICATION_QUEUE_URL=<URL de la cola SQS>
+AWS_SES_SENDER_EMAIL=no-reply@dominio.co
+AWS_SNS_PLATFORM_APPLICATION_ARN=<ARN de la Platform Application>
 JWT_SECRET=<mínimo 32 bytes aleatorios>
 CLOUDFLARE_TURNSTILE_ENABLED=true
 CLOUDFLARE_TURNSTILE_SECRET=<secret del widget>
@@ -78,6 +81,8 @@ La publicación, detección PostGIS de posibles duplicados y gestión de avistam
 La búsqueda por radio, filtros territoriales, privacidad contra triangulación y catálogo geográfico están en [docs/FASE_4_BUSQUEDA_GEOESPACIAL.md](docs/FASE_4_BUSQUEDA_GEOESPACIAL.md).
 
 El contacto con consentimiento, mensajería interna, moderación de reencuentros y operación limitada a Armenia están en [docs/FASE_5_CONTACTO_SEGURO_MVP.md](docs/FASE_5_CONTACTO_SEGURO_MVP.md).
+
+La configuración de SQS, SES, SNS, DLQ, KMS, IAM y dispositivos push está en [docs/AWS_NOTIFICACIONES.md](docs/AWS_NOTIFICACIONES.md).
 
 ## Reportes de mascotas
 

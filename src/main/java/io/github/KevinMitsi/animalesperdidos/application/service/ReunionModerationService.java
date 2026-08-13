@@ -23,11 +23,14 @@ public final class ReunionModerationService implements ReunionModerationUseCase 
             return moderation.save(review).thenApply(ReunionReview::id);
         });
     }
-    @Override public CompletionStage<List<View>> pending() {
-        return moderation.pendingReviews(100).thenCompose(values -> sequence(values.stream().map(this::view).toList()));
+    @Override public CompletionStage<List<View>> pending(UUID moderatorId) {
+        return RoleGuard.require(users,moderatorId,UserRole.MODERATOR,UserRole.ADMIN)
+                .thenCompose(ignored->moderation.pendingReviews(100))
+                .thenCompose(values -> sequence(values.stream().map(this::view).toList()));
     }
     @Override public CompletionStage<Void> decide(UUID moderatorId, UUID reviewId, boolean approved, String note) {
-        return moderation.findReview(reviewId).thenCompose(optional -> optional
+        return RoleGuard.require(users,moderatorId,UserRole.MODERATOR,UserRole.ADMIN)
+                .thenCompose(ignored->moderation.findReview(reviewId)).thenCompose(optional -> optional
                 .<CompletionStage<ReunionReview>>map(ConversationServiceHelper::completed)
                 .orElseGet(() -> failed(new ResourceNotFound("Reunion review"))))
                 .thenCompose(review -> report(review.reportId()).thenCompose(report -> {
