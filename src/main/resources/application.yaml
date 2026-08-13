@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: animalesperdidos
+  r2dbc:
+    url: ${R2DBC_URL:r2dbc:postgresql://localhost:5432/animales_perdidos}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+  datasource:
+    url: ${JDBC_URL:jdbc:postgresql://localhost:5432/animales_perdidos}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+  flyway:
+    enabled: true
+  webflux:
+    multipart:
+      max-in-memory-size: 8MB
+  codec:
+    max-in-memory-size: 8MB
+
+app:
+  storage:
+    s3:
+      bucket: ${S3_BUCKET:animales-perdidos-dev}
+      region: ${AWS_REGION:us-east-1}
+  notifications:
+    email:
+      enabled: ${EMAIL_NOTIFICATIONS_ENABLED:false}
