@@ -31,7 +31,7 @@ public class JwtTokenIssuerAdapter implements TokenIssuerPort {
                 .expiresAt(expiresAt)
                 .subject(user.id().toString())
                 .claim("email", user.email())
-                .claim("scope", "USER")
+                .claim("scope", user.role().name())
                 .build();
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
         String token = encoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();

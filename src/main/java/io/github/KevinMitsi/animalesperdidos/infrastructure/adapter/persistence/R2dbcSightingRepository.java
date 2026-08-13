@@ -82,6 +82,7 @@ public class R2dbcSightingRepository implements SightingRepository {
         if(c.cityId()!=null)where.append(" AND neighborhood.city_id=:city");
         if(c.neighborhoodId()!=null)where.append(" AND s.neighborhood_id=:neighborhood");
         if(c.status()!=null)where.append(" AND s.status=:status");
+        if(!c.exactLocation()&&c.status()==null)where.append(" AND s.status='ACTIVE'");
         if(c.from()!=null)where.append(" AND s.observed_at>=:from");
         if(c.to()!=null)where.append(" AND s.observed_at<=:to");
         if(c.area()!=null)where.append(c.exactLocation() ? """

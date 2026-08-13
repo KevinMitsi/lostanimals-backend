@@ -11,14 +11,19 @@ import java.util.function.Function;
 
 public final class ManageSightingService implements ManageSightingUseCase {
     private final SightingRepository repository; private final ImageStoragePort storage; private final Clock clock;
-    public ManageSightingService(SightingRepository repository, ImageStoragePort storage, Clock clock) {
-        this.repository = repository; this.storage = storage; this.clock = clock;
+    private final ServiceAreaRepository serviceAreas;
+    public ManageSightingService(SightingRepository repository, ImageStoragePort storage, Clock clock,
+                                 ServiceAreaRepository serviceAreas) {
+        this.repository = repository; this.storage = storage; this.clock = clock; this.serviceAreas = serviceAreas;
     }
     @Override public CompletionStage<Void> edit(UUID actorId, UUID id, Edit command) {
         if (command.observedAt().isAfter(clock.instant())) throw new BusinessRuleViolation("Observation cannot be in the future");
-        return mutate(actorId, id, sighting -> sighting.edit(command.species(), command.description(), command.observedAt(),
+        return serviceAreas.isNeighborhoodEnabled(command.neighborhoodId()).thenCompose(enabled -> {
+            if (!enabled) return SightingImagePolicy.failed(new BusinessRuleViolation("Publication area is not enabled"));
+            return mutate(actorId, id, sighting -> sighting.edit(command.species(), command.description(), command.observedAt(),
                 new GeoPoint(command.latitude(), command.longitude()), command.neighborhoodId(), clock.instant()))
                 .thenApply(ignored -> null);
+        });
     }
     @Override public CompletionStage<Void> close(UUID actorId, UUID id) {
         return mutate(actorId, id, sighting -> sighting.close(clock.instant())).thenApply(ignored -> null);

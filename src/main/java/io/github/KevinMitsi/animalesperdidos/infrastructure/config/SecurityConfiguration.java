@@ -41,6 +41,8 @@ public class SecurityConfiguration {
                 .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
                 .authorizeExchange(authorize -> authorize
                         .pathMatchers("/api/v1/auth/**", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
+                        .pathMatchers("/api/v1/admin/**").hasAuthority("SCOPE_ADMIN")
+                        .pathMatchers("/api/v1/moderator/**").hasAnyAuthority("SCOPE_MODERATOR", "SCOPE_ADMIN")
                         .pathMatchers(HttpMethod.GET, "/api/v1/lost-pet-reports/mine").authenticated()
                         .pathMatchers(HttpMethod.GET, "/api/v1/lost-pet-reports", "/api/v1/lost-pet-reports/*").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/v1/sightings/mine").authenticated()

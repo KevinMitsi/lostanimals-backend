@@ -6,6 +6,7 @@ import io.github.KevinMitsi.animalesperdidos.application.exception.ResourceNotFo
 import io.github.KevinMitsi.animalesperdidos.application.port.in.ManageLostPetReportUseCase;
 import io.github.KevinMitsi.animalesperdidos.application.port.out.ImageStoragePort;
 import io.github.KevinMitsi.animalesperdidos.application.port.out.LostPetReportRepository;
+import io.github.KevinMitsi.animalesperdidos.application.port.out.ServiceAreaRepository;
 import io.github.KevinMitsi.animalesperdidos.domain.model.*;
 
 import java.time.Clock;
@@ -20,22 +21,27 @@ public final class ManageLostPetReportService implements ManageLostPetReportUseC
     private final LostPetReportRepository repository;
     private final ImageStoragePort storage;
     private final Clock clock;
+    private final ServiceAreaRepository serviceAreas;
 
-    public ManageLostPetReportService(LostPetReportRepository repository, ImageStoragePort storage, Clock clock) {
+    public ManageLostPetReportService(LostPetReportRepository repository, ImageStoragePort storage, Clock clock,
+                                      ServiceAreaRepository serviceAreas) {
         this.repository = repository;
         this.storage = storage;
         this.clock = clock;
+        this.serviceAreas = serviceAreas;
     }
 
     @Override
     public CompletionStage<Void> edit(UUID actorId, UUID reportId, Edit command) {
-        return mutate(actorId, reportId, report -> report.edit(command.petName(), command.species(), command.description(),
+        return requireEnabled(command.neighborhoodId()).thenCompose(ignored -> mutate(actorId, reportId,
+                report -> report.edit(command.petName(), command.species(), command.description(),
                 command.disappearedAt(), new GeoPoint(command.latitude(), command.longitude()),
-                command.neighborhoodId(), clock.instant())).thenApply(ignored -> null);
+                command.neighborhoodId(), clock.instant()))).thenApply(ignored -> null);
     }
 
     @Override
     public CompletionStage<Void> close(UUID actorId, UUID reportId, ReportStatus status) {
+        if (status == ReportStatus.REUNITED) throw new ForbiddenOperation();
         return mutate(actorId, reportId, report -> status == ReportStatus.LOST
                 ? report.reopen(clock.instant(), Duration.ofDays(30))
                 : report.changeStatus(status, clock.instant())).thenApply(ignored -> null);
@@ -84,6 +90,12 @@ public final class ManageLostPetReportService implements ManageLostPetReportUseC
             if (!optional.get().ownerId().equals(actorId)) return failed(new ForbiddenOperation());
             return CompletableFuture.completedFuture(optional.get());
         });
+    }
+
+    private CompletionStage<Void> requireEnabled(UUID neighborhoodId) {
+        return serviceAreas.isNeighborhoodEnabled(neighborhoodId).thenCompose(enabled -> enabled
+                ? CompletableFuture.completedFuture(null)
+                : failed(new BusinessRuleViolation("Publication area is not enabled")));
     }
 
     private static boolean validImage(ImageStoragePort.StoredObject object) {

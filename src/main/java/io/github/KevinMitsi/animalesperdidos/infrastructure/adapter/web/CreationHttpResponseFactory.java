@@ -31,4 +31,5 @@ public class CreationHttpResponseFactory {
     }
 
     public AttachedImageResponse attachedImage(UUID imageId) { return new AttachedImageResponse(imageId); }
+    public IdResponse id(UUID id) { return new IdResponse(id); }
 }

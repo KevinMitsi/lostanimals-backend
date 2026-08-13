@@ -101,6 +101,7 @@ public class R2dbcLostPetReportRepository implements LostPetReportRepository {
         if (criteria.cityId() != null) where.append(" AND n.city_id=:cityId");
         if (criteria.neighborhoodId() != null) where.append(" AND r.neighborhood_id=:neighborhoodId");
         if (criteria.status() != null) where.append(" AND r.status=:status");
+        if (!criteria.exactLocation() && criteria.status() == null) where.append(" AND r.status='LOST'");
         if (criteria.from() != null) where.append(" AND r.disappeared_at>=:from");
         if (criteria.to() != null) where.append(" AND r.disappeared_at<=:to");
         if (criteria.area() != null) where.append(criteria.exactLocation() ? """

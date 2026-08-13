@@ -21,6 +21,7 @@ public interface LostPetReportWebMapper {
     QueryLostPetReportsUseCase.Search toSearch(ReportSearchRequest request);
 
     ReportStatus toStatus(ReportStatusDto status);
+    ReportStatus toStatus(OwnerReportStatusDto status);
 
     @Mapping(target = "id", source = "reportId")
     CreateLostPetReportResponse toResponse(ReportLostPetUseCase.Result result);

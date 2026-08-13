@@ -42,6 +42,13 @@ class LostPetReportLifecycleTest {
                 () -> closed.reopen(NOW.plus(Duration.ofDays(31)), Duration.ofDays(30)));
     }
 
+    @Test
+    void moderatorConfirmedReunionCannotBeReopenedByOwner() {
+        LostPetReport reunited = report(List.of("one")).changeStatus(ReportStatus.REUNITED, NOW.plusSeconds(1));
+        assertThrows(IllegalStateException.class,
+                () -> reunited.reopen(NOW.plus(Duration.ofDays(1)), Duration.ofDays(30)));
+    }
+
     private static LostPetReport report(List<String> keys) {
         return LostPetReport.create(UUID.randomUUID(), UUID.randomUUID(), "Luna", Species.DOG, "Collar rojo",
                 NOW.minusSeconds(3600), new GeoPoint(4.5339, -75.6811), UUID.randomUUID(), keys, NOW);

@@ -22,9 +22,11 @@ class CreateSightingServiceTest {
     private static final String CLEAN = "sightings/users/" + REPORTER + "/image.jpg";
     @Mock SightingRepository repository;
     @Mock ImageStoragePort storage;
+    @Mock ServiceAreaRepository serviceAreas;
     private CreateSightingService service;
 
-    @BeforeEach void setUp() { service = new CreateSightingService(repository, storage, Clock.fixed(NOW, ZoneOffset.UTC)); }
+    @BeforeEach void setUp() { lenient().when(serviceAreas.isNeighborhoodEnabled(any())).thenReturn(done(true));
+        service = new CreateSightingService(repository, storage, Clock.fixed(NOW, ZoneOffset.UTC), serviceAreas); }
 
     @Test void warnsAboutNearbyDuplicateWithoutPublishingOrTouchingStorage() {
         UUID duplicate = UUID.randomUUID();

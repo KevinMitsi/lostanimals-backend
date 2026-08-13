@@ -5,6 +5,7 @@ import io.github.KevinMitsi.animalesperdidos.application.port.in.ReportLostPetUs
 import io.github.KevinMitsi.animalesperdidos.application.port.out.ImageStoragePort;
 import io.github.KevinMitsi.animalesperdidos.application.port.out.LostPetReportRepository;
 import io.github.KevinMitsi.animalesperdidos.application.port.out.NotificationPort;
+import io.github.KevinMitsi.animalesperdidos.application.port.out.ServiceAreaRepository;
 import io.github.KevinMitsi.animalesperdidos.domain.model.LostPetReport;
 import io.github.KevinMitsi.animalesperdidos.domain.model.Species;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,13 +41,15 @@ class ReportLostPetServiceTest {
     @Mock LostPetReportRepository repository;
     @Mock ImageStoragePort storage;
     @Mock NotificationPort notification;
+    @Mock ServiceAreaRepository serviceAreas;
     @Captor ArgumentCaptor<LostPetReport> reportCaptor;
     private ReportLostPetService service;
 
     @BeforeEach
     void setUp() {
+        lenient().when(serviceAreas.isNeighborhoodEnabled(any())).thenReturn(completed(true));
         service = new ReportLostPetService(repository, storage, notification,
-                Clock.fixed(NOW, ZoneOffset.UTC));
+                Clock.fixed(NOW, ZoneOffset.UTC), serviceAreas);
     }
 
     @Test

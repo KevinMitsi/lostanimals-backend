@@ -71,6 +71,7 @@ public record LostPetReport(
 
     public LostPetReport reopen(Instant now, java.time.Duration allowedWindow) {
         if (status == ReportStatus.LOST) throw new IllegalStateException("Report is already active");
+        if (status == ReportStatus.REUNITED) throw new IllegalStateException("A moderator-confirmed reunion cannot be reopened");
         if (updatedAt.plus(allowedWindow).isBefore(now)) {
             throw new IllegalStateException("The reopening window has expired");
         }

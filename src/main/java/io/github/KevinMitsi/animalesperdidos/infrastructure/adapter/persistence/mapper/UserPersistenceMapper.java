@@ -10,5 +10,6 @@ public interface UserPersistenceMapper {
     UserEntity toEntity(User user);
     @Mapping(target = "verifyEmail", ignore = true)
     @Mapping(target = "changePassword", ignore = true)
+    @Mapping(target = "changeRole", ignore = true)
     User toDomain(UserEntity entity);
 }

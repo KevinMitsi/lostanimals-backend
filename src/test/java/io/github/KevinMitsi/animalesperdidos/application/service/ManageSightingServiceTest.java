@@ -21,9 +21,11 @@ class ManageSightingServiceTest {
     private static final UUID OWNER = UUID.randomUUID();
     @Mock SightingRepository repository;
     @Mock ImageStoragePort storage;
+    @Mock ServiceAreaRepository serviceAreas;
     private ManageSightingService service;
 
-    @BeforeEach void setUp() { service = new ManageSightingService(repository, storage, Clock.fixed(NOW, ZoneOffset.UTC)); }
+    @BeforeEach void setUp() { lenient().when(serviceAreas.isNeighborhoodEnabled(any())).thenReturn(done(true));
+        service = new ManageSightingService(repository, storage, Clock.fixed(NOW, ZoneOffset.UTC), serviceAreas); }
 
     @Test void ownerCanCloseTheSighting() {
         Sighting sighting = sighting();

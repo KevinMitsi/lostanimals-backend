@@ -77,6 +77,8 @@ La publicación, detección PostGIS de posibles duplicados y gestión de avistam
 
 La búsqueda por radio, filtros territoriales, privacidad contra triangulación y catálogo geográfico están en [docs/FASE_4_BUSQUEDA_GEOESPACIAL.md](docs/FASE_4_BUSQUEDA_GEOESPACIAL.md).
 
+El contacto con consentimiento, mensajería interna, moderación de reencuentros y operación limitada a Armenia están en [docs/FASE_5_CONTACTO_SEGURO_MVP.md](docs/FASE_5_CONTACTO_SEGURO_MVP.md).
+
 ## Reportes de mascotas
 
 `POST /api/v1/lost-pet-reports`, tipo `application/json` después de la carga directa a S3:
@@ -95,4 +97,4 @@ La configuración de Turnstile, WAF, rate limiting y aislamiento del origen est�
 - Si persiste el reporte falla, el caso de uso compensa eliminando de S3 las imágenes subidas.
 - Los datos de contacto están separados y no aparecen en el contrato público.
 
-La siguiente vertical es contacto seguro entre reportantes, con consentimiento y protección de datos personales.
+El backend queda en alcance MVP para pruebas en Armenia. Las fases posteriores permanecen en el roadmap y pueden habilitarse después de validar el funcionamiento con usuarios reales.
