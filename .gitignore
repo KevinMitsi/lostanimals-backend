@@ -38,3 +38,8 @@ out/
 
 ROADMAP.md
 /.gradle-user-home/
+
+# Local and deployment secrets
+.env
+.env.*
+!.env.example
