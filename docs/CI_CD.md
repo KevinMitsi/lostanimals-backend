@@ -17,15 +17,15 @@ El workflow `.github/workflows/backend-cd.yml` se ejecuta al enviar cambios a `m
 
 Crear el environment en **Settings > Environments > production** y agregar:
 
-| Variable | Ejemplo |
-|---|---|
-| `AWS_REGION` | `us-east-1` |
-| `AWS_ROLE_ARN` | `arn:aws:iam::512624878025:role/lostanimals-github-deploy` |
-| `ECR_REPOSITORY` | `animales-perdidos-backend` |
-| `EC2_INSTANCE_ID` | `i-0123456789abcdef0` |
-| `DEPLOY_PATH` | `/opt/animales-perdidos` |
-| `COMPOSE_SERVICE` | `backend` |
-| `HEALTHCHECK_URL` | `https://api.animales-perdidos.com/actuator/health` |
+| Variable | Ejemplo                                               |
+|---|-------------------------------------------------------|
+| `AWS_REGION` | `us-east-2`                                           |
+| `AWS_ROLE_ARN` | `arn:aws:iam::1228025:role/lostanimals-github-deploy` |
+| `ECR_REPOSITORY` | `animales-backend`                                    |
+| `EC2_INSTANCE_ID` | `i-012345789adef0`                                    |
+| `DEPLOY_PATH` | `/path/path/animales-perdidos`                        |
+| `COMPOSE_SERVICE` | `backend-animals`                                     |
+| `HEALTHCHECK_URL` | `https://api.animales-perdidos.com/actuator/health`   |
 
 Opcionalmente, proteger el environment con aprobación manual. No se necesitan secretos AWS en GitHub.
 
