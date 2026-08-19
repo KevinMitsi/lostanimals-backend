@@ -1,6 +1,6 @@
 # Contrato backend para el mapa de avistamientos
 
-El mapa consume `GET /api/v1/sightings` con `status=ACTIVE`, `latitude`, `longitude`, `radiusMeters` y `limit`. El contrato ya entrega por cada punto el identificador, coordenadas públicas, imágenes con URL firmada, `createdAt` y demás datos del detalle.
+El mapa consume `GET /api/v1/sightings` con `status=ACTIVE`, `latitude`, `longitude`, `radiusMeters` y `limit`. Este endpoint entrega por cada punto el identificador, coordenadas públicas, imágenes con URL firmada, `createdAt` y demás datos del detalle.
 
 ## Garantías
 
