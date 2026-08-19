@@ -11,6 +11,7 @@ public interface UserRepository {
     CompletionStage<Boolean> existsByPhone(String phone);
     CompletionStage<Boolean> existsByDocumentNumber(String documentNumber);
     CompletionStage<Optional<User>> findByEmail(String email);
+    CompletionStage<Optional<User>> findByGoogleSubject(String subject);
     CompletionStage<Optional<User>> findById(UUID id);
     CompletionStage<User> save(User user);
     CompletionStage<User> update(User user);

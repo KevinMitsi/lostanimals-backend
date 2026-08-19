@@ -46,6 +46,12 @@ public class R2dbcUserRepository implements UserRepository {
     }
 
     @Override
+    public CompletionStage<Optional<User>> findByGoogleSubject(String subject) {
+        return selectUser("WHERE google_subject = :value", subject)
+                .map(Optional::of).defaultIfEmpty(Optional.empty()).toFuture();
+    }
+
+    @Override
     public CompletionStage<Optional<User>> findById(UUID id) {
         return selectUser("WHERE id = :value", id)
                 .map(Optional::of).defaultIfEmpty(Optional.empty()).toFuture();
@@ -54,7 +60,7 @@ public class R2dbcUserRepository implements UserRepository {
     private <T> Mono<User> selectUser(String where, T value) {
         return databaseClient.sql("""
                         SELECT id, email, password_hash, phone, document_number, display_name,
-                               role, habeas_data_accepted_at, email_verified_at, created_at
+                               role, habeas_data_accepted_at, email_verified_at, google_subject, picture_url, created_at
                         FROM app_user %s
                         """.formatted(where))
                 .bind("value", value)
@@ -64,6 +70,7 @@ public class R2dbcUserRepository implements UserRepository {
                         row.get("document_number", String.class), row.get("display_name", String.class),
                         UserRole.valueOf(row.get("role", String.class)),
                         row.get("habeas_data_accepted_at", Instant.class), row.get("email_verified_at", Instant.class),
+                        row.get("google_subject", String.class), row.get("picture_url", String.class),
                         row.get("created_at", Instant.class)))
                 .one().map(mapper::toDomain);
     }
@@ -74,17 +81,20 @@ public class R2dbcUserRepository implements UserRepository {
         return databaseClient.sql("""
                         INSERT INTO app_user
                             (id, email, password_hash, phone, document_number, display_name,
-                             habeas_data_accepted_at, created_at)
+                             habeas_data_accepted_at, email_verified_at, google_subject, picture_url, created_at)
                         VALUES (:id, :email, :passwordHash, :phone, :documentNumber, :displayName,
-                                :acceptedAt, :createdAt)
+                                :acceptedAt, :emailVerifiedAt, :googleSubject, :pictureUrl, :createdAt)
                         """)
                 .bind("id", entity.id())
                 .bind("email", entity.email().toLowerCase(Locale.ROOT))
-                .bind("passwordHash", entity.passwordHash())
-                .bind("phone", entity.phone())
-                .bind("documentNumber", entity.documentNumber())
+                .bind("passwordHash", nullable(entity.passwordHash(), String.class))
+                .bind("phone", nullable(entity.phone(), String.class))
+                .bind("documentNumber", nullable(entity.documentNumber(), String.class))
                 .bind("displayName", entity.displayName())
                 .bind("acceptedAt", entity.habeasDataAcceptedAt())
+                .bind("emailVerifiedAt", nullable(entity.emailVerifiedAt(), Instant.class))
+                .bind("googleSubject", nullable(entity.googleSubject(), String.class))
+                .bind("pictureUrl", nullable(entity.pictureUrl(), String.class))
                 .bind("createdAt", entity.createdAt())
                 .fetch().rowsUpdated().thenReturn(user)
                 .onErrorMap(DataIntegrityViolationException.class,
@@ -95,15 +105,25 @@ public class R2dbcUserRepository implements UserRepository {
     @Override
     public CompletionStage<User> update(User user) {
         return databaseClient.sql("""
-                        UPDATE app_user SET password_hash = :passwordHash, email_verified_at = :emailVerifiedAt, role=:role
+                        UPDATE app_user SET password_hash = :passwordHash, phone = :phone,
+                            document_number = :documentNumber, display_name = :displayName,
+                            email_verified_at = :emailVerifiedAt, google_subject = :googleSubject,
+                            picture_url = :pictureUrl, role = :role
                         WHERE id = :id
                         """)
-                .bind("passwordHash", user.passwordHash())
-                .bind("emailVerifiedAt", user.emailVerifiedAt() == null ? io.r2dbc.spi.Parameters.in(Instant.class) : user.emailVerifiedAt())
+                .bind("passwordHash", nullable(user.passwordHash(), String.class))
+                .bind("phone", nullable(user.phone(), String.class))
+                .bind("documentNumber", nullable(user.documentNumber(), String.class))
+                .bind("displayName", user.displayName())
+                .bind("emailVerifiedAt", nullable(user.emailVerifiedAt(), Instant.class))
+                .bind("googleSubject", nullable(user.googleSubject(), String.class))
+                .bind("pictureUrl", nullable(user.pictureUrl(), String.class))
                 .bind("role", user.role().name())
                 .bind("id", user.id())
                 .fetch().rowsUpdated()
                 .flatMap(rows -> rows == 1 ? Mono.just(user) : Mono.error(new IllegalStateException("User not found")))
+                .onErrorMap(DataIntegrityViolationException.class,
+                        ignored -> new DuplicateUserData("Google identity, phone or document number"))
                 .toFuture();
     }
 
@@ -111,5 +131,9 @@ public class R2dbcUserRepository implements UserRepository {
         return databaseClient.sql(sql).bind("value", value)
                 .map((row, metadata) -> Boolean.TRUE.equals(row.get("present", Boolean.class)))
                 .one().defaultIfEmpty(false).toFuture();
+    }
+
+    private static <T> Object nullable(T value, Class<T> type) {
+        return value == null ? io.r2dbc.spi.Parameters.in(type) : value;
     }
 }

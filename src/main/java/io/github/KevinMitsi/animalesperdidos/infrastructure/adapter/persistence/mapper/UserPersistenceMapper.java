@@ -11,5 +11,6 @@ public interface UserPersistenceMapper {
     @Mapping(target = "verifyEmail", ignore = true)
     @Mapping(target = "changePassword", ignore = true)
     @Mapping(target = "changeRole", ignore = true)
+    @Mapping(target = "profileComplete", ignore = true)
     User toDomain(UserEntity entity);
 }

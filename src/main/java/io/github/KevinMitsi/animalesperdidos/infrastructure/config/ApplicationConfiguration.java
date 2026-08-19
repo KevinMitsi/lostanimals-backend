@@ -110,6 +110,21 @@ public class ApplicationConfiguration {
     }
 
     @Bean
+    GoogleAuthenticationUseCase googleAuthenticationUseCase(UserRepository repository, GoogleIdentityPort google,
+                                                             TokenIssuerPort tokenIssuer,
+                                                             RefreshSessionRepository sessions,
+                                                             OpaqueTokenPort opaqueTokens, Clock clock,
+                                                             SecurityProperties properties) {
+        return new GoogleAuthenticationService(repository, google, tokenIssuer, sessions, opaqueTokens,
+                clock, properties.getRefreshTtl());
+    }
+
+    @Bean
+    CompleteGoogleProfileUseCase completeGoogleProfileUseCase(UserRepository users) {
+        return new CompleteGoogleProfileService(users);
+    }
+
+    @Bean
     AccountLifecycleService accountLifecycleService(UserRepository users, AccountTokenRepository tokens,
                                                      RefreshSessionRepository sessions, OpaqueTokenPort opaqueTokens,
                                                      PasswordHasherPort passwordHasher, AccountNotificationPort notifications,

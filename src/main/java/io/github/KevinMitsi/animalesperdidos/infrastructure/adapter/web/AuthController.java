@@ -5,6 +5,7 @@ import io.github.KevinMitsi.animalesperdidos.application.port.in.RegisterUserUse
 import io.github.KevinMitsi.animalesperdidos.application.port.in.VerifyEmailUseCase;
 import io.github.KevinMitsi.animalesperdidos.application.port.in.PasswordRecoveryUseCase;
 import io.github.KevinMitsi.animalesperdidos.application.port.in.RefreshSessionUseCase;
+import io.github.KevinMitsi.animalesperdidos.application.port.in.GoogleAuthenticationUseCase;
 import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto.LoginRequest;
 import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto.RegisterUserRequest;
 import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto.RegisteredUserResponse;
@@ -34,6 +35,7 @@ public class AuthController {
     private final VerifyEmailUseCase verifyEmail;
     private final PasswordRecoveryUseCase passwordRecovery;
     private final RefreshSessionUseCase refreshSessions;
+    private final GoogleAuthenticationUseCase googleAuthentication;
     private final AuthWebMapper mapper;
     private final ClientIpResolver clientIpResolver;
 
@@ -60,6 +62,18 @@ public class AuthController {
     public Mono<TokenResponse> login(@Valid @RequestBody LoginRequest request, ServerHttpRequest httpRequest) {
         return Mono.fromCompletionStage(authenticateUser.authenticate(
                         mapper.toCommand(request, clientIpResolver.resolve(httpRequest))))
+                .map(mapper::toResponse);
+    }
+
+    @PostMapping("/google")
+    @Operation(summary = "Register or sign in with a Google Identity Services credential", responses = {
+            @ApiResponse(responseCode = "200", description = "Application session issued"),
+            @ApiResponse(responseCode = "401", description = "Invalid Google credential"),
+            @ApiResponse(responseCode = "422", description = "Consent is missing for a new account")
+    })
+    public Mono<GoogleAuthenticationResponse> google(@Valid @RequestBody GoogleAuthenticationRequest request) {
+        return Mono.fromCompletionStage(googleAuthentication.authenticate(
+                        new GoogleAuthenticationUseCase.Command(request.credential(), request.acceptsDataProcessing())))
                 .map(mapper::toResponse);
     }
 

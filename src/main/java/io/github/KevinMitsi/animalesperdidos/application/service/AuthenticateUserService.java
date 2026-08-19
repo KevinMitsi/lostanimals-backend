@@ -50,10 +50,11 @@ public final class AuthenticateUserService implements AuthenticateUserUseCase {
         String email = command.email().trim().toLowerCase(Locale.ROOT);
         return botVerification.verify(command.turnstileToken(), command.remoteIp(), "login")
                 .thenCompose(valid -> valid ? repository.findByEmail(email) : failed(new BotVerificationFailed()))
-                .thenCompose(user -> user.<CompletionStage<User>>map(value -> passwordHasher
-                                .matches(command.password(), value.passwordHash())
-                                .thenCompose(matches -> matches ? CompletableFuture.completedFuture(value)
-                                        : failed(new InvalidCredentials())))
+                .thenCompose(user -> user.<CompletionStage<User>>map(value -> value.passwordHash() == null
+                                ? failed(new InvalidCredentials())
+                                : passwordHasher.matches(command.password(), value.passwordHash())
+                                    .thenCompose(matches -> matches ? CompletableFuture.completedFuture(value)
+                                            : failed(new InvalidCredentials())))
                         .orElseGet(() -> failed(new InvalidCredentials())))
                 .thenCompose(user -> {
                     if (!user.isEmailVerified()) return failed(new EmailNotVerified());

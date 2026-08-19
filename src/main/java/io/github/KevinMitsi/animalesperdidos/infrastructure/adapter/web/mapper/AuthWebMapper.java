@@ -3,10 +3,12 @@ package io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.mapper;
 import io.github.KevinMitsi.animalesperdidos.application.port.in.AuthenticateUserUseCase;
 import io.github.KevinMitsi.animalesperdidos.application.port.in.RegisterUserUseCase;
 import io.github.KevinMitsi.animalesperdidos.application.port.in.RefreshSessionUseCase;
+import io.github.KevinMitsi.animalesperdidos.application.port.in.GoogleAuthenticationUseCase;
 import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto.LoginRequest;
 import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto.RegisterUserRequest;
 import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto.RegisteredUserResponse;
 import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto.TokenResponse;
+import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto.GoogleAuthenticationResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -21,4 +23,5 @@ public interface AuthWebMapper {
     RegisteredUserResponse toResponse(RegisterUserUseCase.Result result);
     TokenResponse toResponse(AuthenticateUserUseCase.Result result);
     TokenResponse toResponse(RefreshSessionUseCase.Result result);
+    GoogleAuthenticationResponse toResponse(GoogleAuthenticationUseCase.Result result);
 }

@@ -47,6 +47,7 @@ AWS_NOTIFICATION_QUEUE_URL=<URL de la cola SQS>
 AWS_SES_SENDER_EMAIL=no-reply@dominio.co
 AWS_SNS_PLATFORM_APPLICATION_ARN=<ARN de la Platform Application>
 JWT_SECRET=<mínimo 32 bytes aleatorios>
+GOOGLE_CLIENT_ID=<client ID web de Google Identity Services>
 CLOUDFLARE_TURNSTILE_ENABLED=true
 CLOUDFLARE_TURNSTILE_SECRET=<secret del widget>
 CLOUDFLARE_EXPECTED_HOSTNAME=app.example.com
@@ -63,6 +64,8 @@ Flyway crea el esquema, habilita PostGIS y carga Armenia junto con cinco barrios
 
 - `POST /api/v1/auth/register`: público; registra correo, contraseña, celular y cédula después de validar Turnstile.
 - `POST /api/v1/auth/login`: público; devuelve un JWT Bearer.
+- `POST /api/v1/auth/google`: valida una credencial de Google, vincula o crea la cuenta y devuelve la sesión local.
+- `PUT /api/v1/users/me/profile`: autenticado; completa teléfono y cédula después de un registro con Google.
 - `POST /api/v1/auth/verify-email` y `/resend-verification`: ciclo de verificación.
 - `POST /api/v1/auth/forgot-password` y `/reset-password`: recuperación segura.
 - `POST /api/v1/auth/refresh` y `/logout`: rotación y revocación de sesiones.
