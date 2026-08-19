@@ -54,6 +54,24 @@ class QuerySightingsServiceTest {
         assertFalse(captor.getValue().exactLocation());
     }
 
+    @Test void publicMapSearchProvidesPopupImageDateAndOnlyApproximateCoordinates() {
+        Sighting sighting = sighting();
+        when(repository.search(any())).thenReturn(done(List.of(sighting)));
+        when(storage.createDownloadUrl(anyString(), eq(Duration.ofMinutes(15))))
+                .thenReturn(done("https://signed.example/map-image"));
+
+        var page = new QuerySightingsService(repository, storage).searchPublic(
+                new QuerySightingsUseCase.Search(null, null, null, null, SightingStatus.ACTIVE,
+                        null, null, 4.71, -74.07, 5_000d, null, 50)).toCompletableFuture().join();
+
+        var mapItem = page.items().getFirst();
+        assertEquals(sighting.id(), mapItem.id());
+        assertEquals(sighting.createdAt(), mapItem.createdAt());
+        assertEquals("https://signed.example/map-image", mapItem.images().getFirst().url());
+        assertEquals(4.534, mapItem.latitude());
+        assertEquals(-75.681, mapItem.longitude());
+    }
+
     private static Sighting sighting() {
         Instant now = Instant.parse("2026-08-13T12:00:00Z");
         return Sighting.create(UUID.randomUUID(), UUID.randomUUID(), Species.DOG, "Descripción", now.minusSeconds(60),
