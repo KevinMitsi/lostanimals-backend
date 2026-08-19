@@ -40,4 +40,21 @@ public class R2dbcGeographicCatalogRepository implements GeographicCatalogReposi
                         row.get("city_id", UUID.class), row.get("name", String.class)))
                 .all().collectList().toFuture();
     }
+
+    @Override public CompletionStage<Optional<NeighborhoodLocationEntry>> findLocationByNeighborhoodId(UUID neighborhoodId) {
+        return databaseClient.sql("""
+                SELECT d.id department_id,d.name department_name,c.id city_id,c.name city_name,
+                       n.id neighborhood_id,n.name neighborhood_name
+                FROM neighborhood n
+                JOIN city c ON c.id=n.city_id
+                JOIN department d ON d.id=c.department_id
+                WHERE n.id=:id
+                """)
+                .bind("id", neighborhoodId)
+                .map((row, metadata) -> new NeighborhoodLocationEntry(row.get("department_id", UUID.class),
+                        row.get("department_name", String.class), row.get("city_id", UUID.class),
+                        row.get("city_name", String.class), row.get("neighborhood_id", UUID.class),
+                        row.get("neighborhood_name", String.class)))
+                .one().map(Optional::of).defaultIfEmpty(Optional.empty()).toFuture();
+    }
 }

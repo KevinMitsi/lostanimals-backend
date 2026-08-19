@@ -10,6 +10,7 @@ public interface GeographicCatalogWebMapper {
     DepartmentResponse toResponse(QueryGeographicCatalogUseCase.DepartmentView value);
     CityResponse toResponse(QueryGeographicCatalogUseCase.CityView value);
     NeighborhoodResponse toResponse(QueryGeographicCatalogUseCase.NeighborhoodView value);
+    NeighborhoodLocationResponse toResponse(QueryGeographicCatalogUseCase.NeighborhoodLocationView value);
     List<DepartmentResponse> toDepartmentResponses(List<QueryGeographicCatalogUseCase.DepartmentView> values);
     List<CityResponse> toCityResponses(List<QueryGeographicCatalogUseCase.CityView> values);
     List<NeighborhoodResponse> toNeighborhoodResponses(List<QueryGeographicCatalogUseCase.NeighborhoodView> values);

@@ -38,4 +38,10 @@ public class GeographicCatalogController {
     public Mono<List<NeighborhoodResponse>> neighborhoods(@RequestParam @NotNull UUID cityId) {
         return Mono.fromCompletionStage(queries.neighborhoods(cityId)).map(mapper::toNeighborhoodResponses);
     }
+
+    @GetMapping("/neighborhoods/{neighborhoodId}")
+    @Operation(summary = "Resolve a neighborhood and its city and department")
+    public Mono<NeighborhoodLocationResponse> resolveNeighborhood(@PathVariable UUID neighborhoodId) {
+        return Mono.fromCompletionStage(queries.resolveNeighborhood(neighborhoodId)).map(mapper::toResponse);
+    }
 }
