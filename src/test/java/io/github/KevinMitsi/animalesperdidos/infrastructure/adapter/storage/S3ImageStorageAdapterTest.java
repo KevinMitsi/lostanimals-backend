@@ -24,6 +24,8 @@ import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -76,6 +78,19 @@ class S3ImageStorageAdapterTest {
         assertTrue(result.objectKey().startsWith("lost-pet-reports/users/" + owner + "/"));
         assertTrue(putRequest.getValue().contentLength() < input.length || putRequest.getValue().contentLength() > 0);
         assertNotEquals(stagingKey, result.objectKey());
+    }
+
+    @Test
+    void returnsOnlyHeadersThatBrowserCodeCanSet() {
+        Map<String, String> headers = S3ImageStorageAdapter.browserRequiredHeaders(Map.of(
+                "host", List.of("private-test-bucket.s3.amazonaws.com"),
+                "Content-Length", List.of("1024"),
+                "Content-Type", List.of("image/png"),
+                "x-amz-checksum-sha256", List.of("checksum")));
+
+        assertEquals(Map.of(
+                "Content-Type", "image/png",
+                "x-amz-checksum-sha256", "checksum"), headers);
     }
 
     private static AsyncResponseTransformer<GetObjectResponse, ResponseBytes<GetObjectResponse>> anyBytesTransformer() {

@@ -13,6 +13,8 @@
 9. Las consultas entregan URLs `GET` firmadas por 15 minutos; nunca URLs públicas permanentes.
 
 El checksum forma parte de la firma `PUT` y de la clave, por lo que el contenido no puede sustituirse después de ser aprobado. Los objetos S3 permanecen privados.
+`Content-Length` no se incluye entre los encabezados firmados ni requeridos porque los navegadores no permiten
+que JavaScript lo establezca; S3 y la API verifican el tamaño real del objeto después de la carga.
 
 ## API
 
@@ -37,12 +39,13 @@ La paginación usa cursor estable `(created_at,id)` y pide como máximo 50 eleme
 - No agregar ACL públicas ni políticas `Principal: *` para lectura.
 - La identidad del backend necesita únicamente `s3:PutObject`, `s3:GetObject`, `s3:HeadObject` y `s3:DeleteObject` sobre `lost-pet-reports/*` y `sightings/*`.
 - Crear reglas lifecycle que eliminen `lost-pet-reports/staging/` y `sightings/staging/` después de un día para limpiar cargas abandonadas.
-- Configurar CORS sustituyendo el origen por el frontend real:
+- Configurar CORS con el origen exacto del frontend. La configuración de producción también está
+  disponible en `docs/s3-cors-production.json`:
 
 ```json
 [
   {
-    "AllowedOrigins": ["https://app.example.com"],
+    "AllowedOrigins": ["https://www.animales-perdidos.com"],
     "AllowedMethods": ["PUT", "GET", "HEAD"],
     "AllowedHeaders": ["content-type", "x-amz-checksum-sha256"],
     "ExposeHeaders": ["ETag", "x-amz-checksum-sha256"],
@@ -52,6 +55,8 @@ La paginación usa cursor estable `(created_at,id)` y pide como máximo 50 eleme
 ```
 
 CORS no concede acceso al bucket: la autorización sigue estando en la firma temporal de cada URL.
+Aplicar la configuración con `aws s3api put-bucket-cors --bucket <bucket> --cors-configuration
+file://docs/s3-cors-production.json`. La identidad que ejecute el comando necesita `s3:PutBucketCORS`.
 
 ## Integridad y concurrencia
 

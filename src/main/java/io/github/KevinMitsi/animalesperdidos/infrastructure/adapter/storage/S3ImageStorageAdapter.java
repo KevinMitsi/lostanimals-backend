@@ -29,14 +29,18 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
 @Component
 @RequiredArgsConstructor
 public class S3ImageStorageAdapter implements ImageStoragePort {
+    private static final Set<String> BROWSER_MANAGED_HEADERS = Set.of("host", "content-length");
+
     private final S3AsyncClient client;
     private final S3Presigner presigner;
     private final S3Properties properties;
@@ -69,15 +73,22 @@ public class S3ImageStorageAdapter implements ImageStoragePort {
         String key = category.folder() + "/staging/users/" + ownerId + "/" + UUID.randomUUID() + "-" + checksumHex
                 + extensionFor(contentType);
         PutObjectRequest objectRequest = PutObjectRequest.builder().bucket(properties.getBucket()).key(key)
-                .contentType(contentType).contentLength(contentLength).checksumSHA256(checksumSha256).build();
+                .contentType(contentType).checksumSHA256(checksumSha256).build();
         var signed = presigner.presignPutObject(PutObjectPresignRequest.builder()
                 .signatureDuration(validity).putObjectRequest(objectRequest).build());
-        Map<String, String> headers = new LinkedHashMap<>();
-        signed.signedHeaders().forEach((name, values) -> {
-            if (!name.equalsIgnoreCase("host")) headers.put(name, String.join(",", values));
-        });
         return java.util.concurrent.CompletableFuture.completedFuture(new PreparedUpload(key,
-                signed.url().toExternalForm(), "PUT", Map.copyOf(headers), Instant.now().plus(validity)));
+                signed.url().toExternalForm(), "PUT", browserRequiredHeaders(signed.signedHeaders()),
+                Instant.now().plus(validity)));
+    }
+
+    static Map<String, String> browserRequiredHeaders(Map<String, List<String>> signedHeaders) {
+        Map<String, String> headers = new LinkedHashMap<>();
+        signedHeaders.forEach((name, values) -> {
+            if (!BROWSER_MANAGED_HEADERS.contains(name.toLowerCase(Locale.ROOT))) {
+                headers.put(name, String.join(",", values));
+            }
+        });
+        return Map.copyOf(headers);
     }
 
     @Override
