@@ -1,0 +1,23 @@
+{
+  "CORSRules": [
+    {
+      "AllowedOrigins": [
+        "https://www.animales-perdidos.com"
+      ],
+      "AllowedMethods": [
+        "PUT",
+        "GET",
+        "HEAD"
+      ],
+      "AllowedHeaders": [
+        "content-type",
+        "x-amz-checksum-sha256"
+      ],
+      "ExposeHeaders": [
+        "ETag",
+        "x-amz-checksum-sha256"
+      ],
+      "MaxAgeSeconds": 600
+    }
+  ]
+}
