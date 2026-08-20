@@ -200,3 +200,29 @@ jobs:
             --retry-delay 3 \
             --retry-all-errors \
             "${HEALTHCHECK_URL}"
+
+      - name: Verify Google authentication endpoint is publicly deployed
+        shell: bash
+        run: |
+          set -euo pipefail
+          health_suffix='/actuator/health'
+          if [[ "${HEALTHCHECK_URL}" != *"${health_suffix}" ]]; then
+            echo "HEALTHCHECK_URL must end with ${health_suffix} to derive the public API URL." >&2
+            exit 1
+          fi
+
+          api_base="${HEALTHCHECK_URL%${health_suffix}}"
+          status_code="$(curl --silent --show-error \
+            --retry 10 \
+            --retry-delay 3 \
+            --retry-all-errors \
+            --output /dev/null \
+            --write-out '%{http_code}' \
+            --header 'Content-Type: application/json' \
+            --data '{}' \
+            "${api_base}/api/v1/auth/google")"
+
+          if [ "${status_code}" != '400' ]; then
+            echo "Expected Google auth validation response 400, received ${status_code}." >&2
+            exit 1
+          fi
