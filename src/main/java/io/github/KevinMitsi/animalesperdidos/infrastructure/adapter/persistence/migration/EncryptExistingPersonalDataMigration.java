@@ -2,15 +2,15 @@ package io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.persistence
 
 import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.security.PersonalDataCipher;
 import org.flywaydb.core.api.MigrationVersion;
-import org.flywaydb.core.api.migration.BaseJavaMigration;
 import org.flywaydb.core.api.migration.Context;
+import org.flywaydb.core.api.migration.JavaMigration;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public final class EncryptExistingPersonalDataMigration extends BaseJavaMigration {
+public final class EncryptExistingPersonalDataMigration implements JavaMigration {
     private final PersonalDataCipher cipher;
 
     public EncryptExistingPersonalDataMigration(PersonalDataCipher cipher) {
@@ -30,6 +30,11 @@ public final class EncryptExistingPersonalDataMigration extends BaseJavaMigratio
     @Override
     public Integer getChecksum() {
         return 10_202_608;
+    }
+
+    @Override
+    public boolean canExecuteInTransaction() {
+        return true;
     }
 
     @Override
