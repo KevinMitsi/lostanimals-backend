@@ -161,6 +161,11 @@ jobs:
           done
 
           if [ "\${healthy}" != 'true' ]; then
+            echo 'Backend startup failure summary:'
+            docker compose logs --no-color --tail 300 '${COMPOSE_SERVICE}' 2>&1 \
+              | grep --extended-regexp 'ERROR|Caused by:|Exception|Migration|SQL State|Error Code|Message|Failed to' \
+              | tail --lines 100 || true
+            echo 'Backend final log lines:'
             docker compose logs --no-color --tail 150 '${COMPOSE_SERVICE}' || true
             if [ -n "\${old_image_id}" ] && [ -n "\${old_image_name}" ]; then
               docker tag "\${old_image_id}" "\${old_image_name}"
