@@ -73,7 +73,7 @@ Flyway crea el esquema, habilita PostGIS y carga Armenia junto con cinco barrios
 - OpenAPI JSON: `/v3/api-docs`.
 - Swagger UI: `/swagger-ui.html`.
 
-Las contraseñas se procesan con BCrypt de coste 12 en `boundedElastic`, de modo que el cálculo intensivo no bloquea los event loops de WebFlux. Solo el hash se almacena. Correo, celular y cédula tienen restricciones únicas en PostgreSQL; el correo se normaliza en minúsculas y también posee índice único sobre `lower(email)`.
+Las contraseñas se procesan con BCrypt de coste 12 en `boundedElastic`, de modo que el cálculo intensivo no bloquea los event loops de WebFlux. Solo el hash se almacena. El celular y la cédula se cifran antes de persistirse y sus valores auxiliares protegidos conservan las validaciones de unicidad sin guardar otra copia legible. El correo se normaliza en minúsculas y posee índice único sobre `lower(email)`.
 
 La implementación y contratos de la primera fase están descritos en [docs/FASE_1_IDENTIDAD.md](docs/FASE_1_IDENTIDAD.md). El orden completo del producto vive en [docs/ROADMAP.md](docs/ROADMAP.md).
 

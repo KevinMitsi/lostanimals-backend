@@ -6,6 +6,7 @@ import io.github.KevinMitsi.animalesperdidos.domain.model.User;
 import io.github.KevinMitsi.animalesperdidos.domain.model.UserRole;
 import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.persistence.entity.UserEntity;
 import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.persistence.mapper.UserPersistenceMapper;
+import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.security.PersonalDataCipher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.r2dbc.core.DatabaseClient;
@@ -23,6 +24,7 @@ import java.util.concurrent.CompletionStage;
 public class R2dbcUserRepository implements UserRepository {
     private final DatabaseClient databaseClient;
     private final UserPersistenceMapper mapper;
+    private final PersonalDataCipher personalDataCipher;
 
     @Override
     public CompletionStage<Boolean> existsByEmail(String email) {
@@ -31,12 +33,14 @@ public class R2dbcUserRepository implements UserRepository {
 
     @Override
     public CompletionStage<Boolean> existsByPhone(String phone) {
-        return exists("SELECT EXISTS(SELECT 1 FROM app_user WHERE phone = :value) AS present", phone);
+        return exists("SELECT EXISTS(SELECT 1 FROM app_user WHERE phone_lookup = :value) AS present",
+                personalDataCipher.phoneLookup(phone));
     }
 
     @Override
     public CompletionStage<Boolean> existsByDocumentNumber(String documentNumber) {
-        return exists("SELECT EXISTS(SELECT 1 FROM app_user WHERE document_number = :value) AS present", documentNumber);
+        return exists("SELECT EXISTS(SELECT 1 FROM app_user WHERE document_number_lookup = :value) AS present",
+                personalDataCipher.documentNumberLookup(documentNumber));
     }
 
     @Override
@@ -66,8 +70,8 @@ public class R2dbcUserRepository implements UserRepository {
                 .bind("value", value)
                 .map((row, metadata) -> new UserEntity(
                         row.get("id", UUID.class), row.get("email", String.class),
-                        row.get("password_hash", String.class), row.get("phone", String.class),
-                        row.get("document_number", String.class), row.get("display_name", String.class),
+                        row.get("password_hash", String.class), personalDataCipher.decryptPhone(row.get("phone", String.class)),
+                        personalDataCipher.decryptDocumentNumber(row.get("document_number", String.class)), row.get("display_name", String.class),
                         UserRole.valueOf(row.get("role", String.class)),
                         row.get("habeas_data_accepted_at", Instant.class), row.get("email_verified_at", Instant.class),
                         row.get("google_subject", String.class), row.get("picture_url", String.class),
@@ -80,16 +84,18 @@ public class R2dbcUserRepository implements UserRepository {
         UserEntity entity = mapper.toEntity(user);
         return databaseClient.sql("""
                         INSERT INTO app_user
-                            (id, email, password_hash, phone, document_number, display_name,
+                            (id, email, password_hash, phone, phone_lookup, document_number, document_number_lookup, display_name,
                              habeas_data_accepted_at, email_verified_at, google_subject, picture_url, created_at)
-                        VALUES (:id, :email, :passwordHash, :phone, :documentNumber, :displayName,
+                        VALUES (:id, :email, :passwordHash, :phone, :phoneLookup, :documentNumber, :documentLookup, :displayName,
                                 :acceptedAt, :emailVerifiedAt, :googleSubject, :pictureUrl, :createdAt)
                         """)
                 .bind("id", entity.id())
                 .bind("email", entity.email().toLowerCase(Locale.ROOT))
                 .bind("passwordHash", nullable(entity.passwordHash(), String.class))
-                .bind("phone", nullable(entity.phone(), String.class))
-                .bind("documentNumber", nullable(entity.documentNumber(), String.class))
+                .bind("phone", nullable(personalDataCipher.encryptPhone(entity.phone()), String.class))
+                .bind("phoneLookup", nullable(personalDataCipher.phoneLookup(entity.phone()), String.class))
+                .bind("documentNumber", nullable(personalDataCipher.encryptDocumentNumber(entity.documentNumber()), String.class))
+                .bind("documentLookup", nullable(personalDataCipher.documentNumberLookup(entity.documentNumber()), String.class))
                 .bind("displayName", entity.displayName())
                 .bind("acceptedAt", entity.habeasDataAcceptedAt())
                 .bind("emailVerifiedAt", nullable(entity.emailVerifiedAt(), Instant.class))
@@ -105,15 +111,17 @@ public class R2dbcUserRepository implements UserRepository {
     @Override
     public CompletionStage<User> update(User user) {
         return databaseClient.sql("""
-                        UPDATE app_user SET password_hash = :passwordHash, phone = :phone,
-                            document_number = :documentNumber, display_name = :displayName,
+                        UPDATE app_user SET password_hash = :passwordHash, phone = :phone, phone_lookup = :phoneLookup,
+                            document_number = :documentNumber, document_number_lookup = :documentLookup, display_name = :displayName,
                             email_verified_at = :emailVerifiedAt, google_subject = :googleSubject,
                             picture_url = :pictureUrl, role = :role
                         WHERE id = :id
                         """)
                 .bind("passwordHash", nullable(user.passwordHash(), String.class))
-                .bind("phone", nullable(user.phone(), String.class))
-                .bind("documentNumber", nullable(user.documentNumber(), String.class))
+                .bind("phone", nullable(personalDataCipher.encryptPhone(user.phone()), String.class))
+                .bind("phoneLookup", nullable(personalDataCipher.phoneLookup(user.phone()), String.class))
+                .bind("documentNumber", nullable(personalDataCipher.encryptDocumentNumber(user.documentNumber()), String.class))
+                .bind("documentLookup", nullable(personalDataCipher.documentNumberLookup(user.documentNumber()), String.class))
                 .bind("displayName", user.displayName())
                 .bind("emailVerifiedAt", nullable(user.emailVerifiedAt(), Instant.class))
                 .bind("googleSubject", nullable(user.googleSubject(), String.class))
