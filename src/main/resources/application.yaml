@@ -34,6 +34,9 @@ app:
     cors:
       allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
   security:
+    personal-data:
+      encryption-key: ${PERSONAL_DATA_ENCRYPTION_KEY:}
+      lookup-key: ${PERSONAL_DATA_LOOKUP_KEY:}
     google:
       client-id: ${GOOGLE_CLIENT_ID:107998184654-a50tcvv3nbgkdkmj34gg09kjhor4q1gs.apps.googleusercontent.com}
     jwt:
