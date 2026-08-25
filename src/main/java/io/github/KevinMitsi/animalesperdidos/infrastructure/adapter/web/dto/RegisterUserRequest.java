@@ -1,6 +1,7 @@
 package io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.validation.NoSqlInjection;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -8,6 +9,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 @Schema(description = "Information required to create a citizen account")
+@NoSqlInjection
 public record RegisterUserRequest(
         @NotBlank @Email @Size(max = 254)
         @Schema(example = "ana@example.com") String email,

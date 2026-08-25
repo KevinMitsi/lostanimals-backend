@@ -1,6 +1,7 @@
 package io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.validation.NoSqlInjection;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -13,6 +14,7 @@ import java.util.UUID;
 import java.util.List;
 
 @Schema(description = "Lost-pet report metadata; send as the JSON metadata part of multipart/form-data")
+@NoSqlInjection
 public record CreateLostPetReportRequest(
         @NotBlank @Size(max = 80) @Schema(example = "Luna") String petName,
         @NotNull @Schema(example = "DOG") SpeciesDto species,

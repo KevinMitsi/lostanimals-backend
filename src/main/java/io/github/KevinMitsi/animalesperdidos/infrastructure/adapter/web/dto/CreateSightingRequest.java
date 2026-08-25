@@ -1,11 +1,13 @@
 package io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.validation.NoSqlInjection;
 import jakarta.validation.constraints.*;
 import java.time.Instant;
 import java.util.*;
 
 @Schema(description = "Information required to publish an animal sighting")
+@NoSqlInjection
 public record CreateSightingRequest(
         @NotNull SpeciesDto species,
         @NotBlank @Size(max = 2000) String description,

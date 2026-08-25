@@ -1,8 +1,10 @@
 package io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.validation.NoSqlInjection;
 import jakarta.validation.constraints.*;
 
+@NoSqlInjection
 public record PrepareImageUploadRequest(
         @NotBlank @Size(max = 255) @Pattern(regexp = "^[^/\\\\]+$", message = "must be a file name without a path")
         @Schema(example = "luna.webp") String fileName,
