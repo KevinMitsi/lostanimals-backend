@@ -31,12 +31,6 @@ public class ConversationController {
             @RequestParam(required=false) @Size(max=200) String after,@RequestParam(defaultValue="50") @Min(1) @Max(100) int limit){
         return Mono.fromCompletionStage(conversations.messages(authenticatedUser.id(jwt),conversationId,after,limit)).map(mapper::toResponse);
     }
-    @PostMapping("/{conversationId}/messages") @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary="Store a message in an open conversation")
-    public Mono<IdResponse> send(@AuthenticationPrincipal Jwt jwt,@PathVariable UUID conversationId,
-            @Valid @RequestBody SendMessageRequest request){
-        return Mono.fromCompletionStage(conversations.send(authenticatedUser.id(jwt),conversationId,request.content())).map(responses::id);
-    }
     @PatchMapping("/{conversationId}/close") @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary="Close a conversation")
     public Mono<Void> close(@AuthenticationPrincipal Jwt jwt,@PathVariable UUID conversationId){

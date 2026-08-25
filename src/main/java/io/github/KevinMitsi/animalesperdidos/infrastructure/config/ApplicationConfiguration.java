@@ -74,8 +74,9 @@ public class ApplicationConfiguration {
         return new ContactRequestService(contacts, reports, sightings, clock);
     }
 
-    @Bean ConversationUseCase conversationUseCase(ContactRepository contacts, UserRepository users, Clock clock) {
-        return new ConversationService(contacts, users, clock);
+    @Bean ConversationUseCase conversationUseCase(ContactRepository contacts, UserRepository users,
+                                                   MessageEventPublisher messageEvents, Clock clock) {
+        return new ConversationService(contacts, users, messageEvents, clock);
     }
 
     @Bean ReunionModerationUseCase reunionModerationUseCase(ModerationRepository moderation,
