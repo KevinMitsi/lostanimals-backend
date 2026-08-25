@@ -1,11 +1,13 @@
 package io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto;
 
+import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.validation.NoSqlInjection;
 import jakarta.validation.constraints.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.UUID;
 
 @Schema(description = "Filters for sightings; latitude, longitude and radiusMeters must be sent together")
+@NoSqlInjection
 public record SightingSearchRequest(SpeciesDto species, UUID departmentId, UUID cityId, UUID neighborhoodId,
                                     SightingStatusDto status, Instant from, Instant to,
                                     @DecimalMin("-90.0") @DecimalMax("90.0") Double latitude,

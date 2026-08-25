@@ -1,5 +1,6 @@
 package io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto;
 
+import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.validation.NoSqlInjection;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
@@ -12,6 +13,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Schema(description = "Filters for lost-pet reports; latitude, longitude and radiusMeters must be sent together")
+@NoSqlInjection
 public record ReportSearchRequest(SpeciesDto species, UUID departmentId, UUID cityId, UUID neighborhoodId,
                                   ReportStatusDto status, Instant from, Instant to,
                                   @DecimalMin("-90.0") @DecimalMax("90.0") Double latitude,

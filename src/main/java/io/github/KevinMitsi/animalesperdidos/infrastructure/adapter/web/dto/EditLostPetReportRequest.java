@@ -1,11 +1,13 @@
 package io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.github.KevinMitsi.animalesperdidos.infrastructure.adapter.web.validation.NoSqlInjection;
 import jakarta.validation.constraints.*;
 
 import java.time.Instant;
 import java.util.UUID;
 
+@NoSqlInjection
 public record EditLostPetReportRequest(
         @NotBlank @Size(max = 80) String petName,
         @NotNull SpeciesDto species,
