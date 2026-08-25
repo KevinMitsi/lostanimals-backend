@@ -85,6 +85,8 @@ La búsqueda por radio, filtros territoriales, privacidad contra triangulación 
 
 El contacto con consentimiento, mensajería interna, moderación de reencuentros y operación limitada a Armenia están en [docs/FASE_5_CONTACTO_SEGURO_MVP.md](docs/FASE_5_CONTACTO_SEGURO_MVP.md).
 
+El envío y recepción de mensajes en tiempo real, incluido el cambio requerido en front-end, están en [docs/WEBSOCKET_MENSAJERIA.md](docs/WEBSOCKET_MENSAJERIA.md).
+
 La configuración de SQS, SES, SNS, DLQ, KMS, IAM y dispositivos push está en [docs/AWS_NOTIFICACIONES.md](docs/AWS_NOTIFICACIONES.md).
 
 ## Reportes de mascotas

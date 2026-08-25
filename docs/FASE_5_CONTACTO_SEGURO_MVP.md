@@ -9,7 +9,7 @@ El flujo es:
 1. Un usuario autenticado solicita contacto sobre un reporte `LOST` o un avistamiento `ACTIVE`.
 2. El creador consulta sus solicitudes recibidas y acepta o rechaza.
 3. Aceptar actualiza la solicitud y crea la conversación con sus dos participantes en una transacción.
-4. Los participantes almacenan y consultan mensajes por polling con cursor.
+4. Los participantes envían y reciben mensajes por WebSocket; el historial persistido se consulta por HTTP con cursor.
 5. Cualquiera puede cerrar la conversación, bloquear al otro participante o denunciarla.
 6. Los moderadores revisan denuncias en una cola independiente.
 
@@ -26,13 +26,13 @@ Una solicitud no puede dirigirse a una publicación propia ni crearse si existe 
 | `PATCH` | `/api/v1/contact-requests/{id}/reject` | Rechazar |
 | `PATCH` | `/api/v1/contact-requests/{id}/cancel` | Cancelar una solicitud propia |
 | `GET` | `/api/v1/conversations` | Conversaciones propias |
-| `GET` | `/api/v1/conversations/{id}/messages?after={cursor}` | Polling de mensajes |
-| `POST` | `/api/v1/conversations/{id}/messages` | Enviar mensaje almacenado |
+| `GET` | `/api/v1/conversations/{id}/messages?after={cursor}` | Historial y recuperación de mensajes |
+| `WS` | `/ws/conversations/{id}` | Enviar y recibir mensajes en tiempo real |
 | `PATCH` | `/api/v1/conversations/{id}/close` | Cerrar conversación |
 | `PATCH` | `/api/v1/conversations/{id}/block` | Bloquear y cerrar |
 | `POST` | `/api/v1/conversations/{id}/reports` | Denunciar conversación |
 
-El polling devuelve hasta 100 mensajes en orden ascendente. `nextAfter` siempre conserva el último checkpoint conocido —incluso cuando todavía no hay mensajes nuevos— y representa `(created_at,id)` de forma opaca. WebSocket podrá implementarse después como otro adaptador sobre los mismos casos de uso y mensajes, sin modificar el dominio.
+La consulta histórica devuelve hasta 100 mensajes en orden ascendente. `nextAfter` siempre conserva el último checkpoint conocido —incluso cuando todavía no hay mensajes nuevos— y representa `(created_at,id)` de forma opaca. El contrato WebSocket, la autenticación y la estrategia de reconexión están documentados en [WEBSOCKET_MENSAJERIA.md](WEBSOCKET_MENSAJERIA.md).
 
 ## Reencuentro verificado
 

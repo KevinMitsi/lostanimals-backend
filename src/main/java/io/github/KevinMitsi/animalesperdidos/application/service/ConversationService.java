@@ -9,12 +9,17 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public final class ConversationService implements ConversationUseCase {
-    private final ContactRepository contacts; private final UserRepository users; private final Clock clock;
-    public ConversationService(ContactRepository contacts, UserRepository users, Clock clock) {
-        this.contacts = contacts; this.users = users; this.clock = clock;
+    private final ContactRepository contacts; private final UserRepository users;
+    private final MessageEventPublisher messageEvents; private final Clock clock;
+    public ConversationService(ContactRepository contacts, UserRepository users,
+                               MessageEventPublisher messageEvents, Clock clock) {
+        this.contacts = contacts; this.users = users; this.messageEvents = messageEvents; this.clock = clock;
     }
     @Override public CompletionStage<List<View>> list(UUID actorId) {
         return contacts.conversationsFor(actorId).thenCompose(values -> sequence(values.stream().map(this::view).toList()));
+    }
+    @Override public CompletionStage<Void> verifyAccess(UUID actorId, UUID conversationId) {
+        return conversation(actorId, conversationId).thenApply(ignored -> null);
     }
     @Override public CompletionStage<MessagePage> messages(UUID actorId, UUID conversationId, String after, int limit) {
         int safeLimit = Math.max(1, Math.min(limit, 100));
@@ -33,7 +38,8 @@ public final class ConversationService implements ConversationUseCase {
             return contacts.blockedBetween(actorId, other).thenCompose(blocked -> {
                 if (blocked) return failed(new ForbiddenOperation());
                 Message message = new Message(UUID.randomUUID(), conversationId, actorId, content, clock.instant());
-                return contacts.saveMessage(message).thenApply(Message::id);
+                return contacts.saveMessage(message)
+                        .thenCompose(saved -> messageEvents.publish(saved).thenApply(ignored -> saved.id()));
             });
         });
     }

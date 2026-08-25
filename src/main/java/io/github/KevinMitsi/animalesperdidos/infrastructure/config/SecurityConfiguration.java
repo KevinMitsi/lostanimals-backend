@@ -12,16 +12,21 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.server.resource.web.server.authentication.ServerBearerTokenAuthenticationConverter;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -53,8 +58,24 @@ public class SecurityConfiguration {
                         .pathMatchers(HttpMethod.GET, "/api/v1/sightings", "/api/v1/sightings/*").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/v1/geography/**").permitAll()
                         .anyExchange().authenticated())
-                .oauth2ResourceServer(resourceServer -> resourceServer.jwt(Customizer.withDefaults()))
+                .oauth2ResourceServer(resourceServer -> resourceServer
+                        .bearerTokenConverter(webSocketBearerTokenConverter())
+                        .jwt(Customizer.withDefaults()))
                 .build();
+    }
+
+    private ServerAuthenticationConverter webSocketBearerTokenConverter() {
+        ServerBearerTokenAuthenticationConverter headers = new ServerBearerTokenAuthenticationConverter();
+        ServerBearerTokenAuthenticationConverter webSocket = new ServerBearerTokenAuthenticationConverter();
+        webSocket.setAllowUriQueryParameter(true);
+        return new ServerAuthenticationConverter() {
+            @Override
+            public Mono<Authentication> convert(ServerWebExchange exchange) {
+                return exchange.getRequest().getPath().value().startsWith("/ws/conversations/")
+                        ? webSocket.convert(exchange)
+                        : headers.convert(exchange);
+            }
+        };
     }
 
     @Bean

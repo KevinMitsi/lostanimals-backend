@@ -7,6 +7,7 @@ import java.util.concurrent.CompletionStage;
 
 public interface ConversationUseCase {
     CompletionStage<List<View>> list(UUID actorId);
+    CompletionStage<Void> verifyAccess(UUID actorId, UUID conversationId);
     CompletionStage<MessagePage> messages(UUID actorId, UUID conversationId, String after, int limit);
     CompletionStage<UUID> send(UUID actorId, UUID conversationId, String content);
     CompletionStage<Void> close(UUID actorId, UUID conversationId);
