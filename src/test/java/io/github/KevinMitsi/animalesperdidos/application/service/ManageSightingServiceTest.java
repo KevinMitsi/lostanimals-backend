@@ -24,7 +24,7 @@ class ManageSightingServiceTest {
     @Mock ServiceAreaRepository serviceAreas;
     private ManageSightingService service;
 
-    @BeforeEach void setUp() { lenient().when(serviceAreas.isNeighborhoodEnabled(any())).thenReturn(done(true));
+    @BeforeEach void setUp() { lenient().when(serviceAreas.isMunicipalityEnabled(any())).thenReturn(done(true));
         service = new ManageSightingService(repository, storage, Clock.fixed(NOW, ZoneOffset.UTC), serviceAreas); }
 
     @Test void ownerCanCloseTheSighting() {
@@ -39,7 +39,7 @@ class ManageSightingServiceTest {
         Sighting sighting = sighting();
         when(repository.findById(sighting.id())).thenReturn(done(Optional.of(sighting)));
         var edit = new ManageSightingUseCase.Edit(Species.CAT, "Descripción", NOW.minusSeconds(20),
-                4.53, -75.68, sighting.neighborhoodId());
+                4.53, -75.68, sighting.administrativeLocation());
         CompletionException error = assertThrows(CompletionException.class,
                 () -> service.edit(UUID.randomUUID(), sighting.id(), edit).toCompletableFuture().join());
         assertInstanceOf(ForbiddenOperation.class, error.getCause());
@@ -48,7 +48,8 @@ class ManageSightingServiceTest {
 
     private static Sighting sighting() {
         return Sighting.create(UUID.randomUUID(), OWNER, Species.DOG, "Descripción", NOW.minusSeconds(100),
-                new GeoPoint(4.5339, -75.6811), UUID.randomUUID(), List.of("sightings/users/u/1.jpg"), NOW.minusSeconds(10));
+                new GeoPoint(4.5339, -75.6811), new AdministrativeLocation("63","63001","Granada"),
+                List.of("sightings/users/u/1.jpg"), NOW.minusSeconds(10));
     }
     private static <T> CompletableFuture<T> done(T value) { return CompletableFuture.completedFuture(value); }
 }

@@ -21,7 +21,7 @@ class SightingLifecycleTest {
     @Test void closedSightingsCannotBeEdited() {
         Sighting closed = sighting().close(NOW.plusSeconds(1));
         assertThrows(IllegalStateException.class, () -> closed.edit(Species.CAT, "Nueva descripción",
-                NOW.minusSeconds(60), closed.location(), closed.neighborhoodId(), NOW.plusSeconds(2)));
+                NOW.minusSeconds(60), closed.location(), closed.administrativeLocation(), NOW.plusSeconds(2)));
     }
 
     @Test void alwaysKeepsAtLeastOneImage() {
@@ -31,7 +31,8 @@ class SightingLifecycleTest {
 
     private static Sighting sighting() {
         return Sighting.create(UUID.randomUUID(), UUID.randomUUID(), Species.DOG, "Collar azul",
-                NOW.minusSeconds(300), new GeoPoint(4.5339, -75.6811), UUID.randomUUID(),
+                NOW.minusSeconds(300), new GeoPoint(4.5339, -75.6811),
+                new AdministrativeLocation("63","63001","Granada"),
                 List.of("sightings/users/u/1.jpg"), NOW);
     }
 }

@@ -64,11 +64,6 @@ public class ApplicationConfiguration {
         return new ManageSightingService(repository, storage, clock, serviceAreas);
     }
 
-    @Bean
-    QueryGeographicCatalogUseCase queryGeographicCatalogUseCase(GeographicCatalogRepository repository) {
-        return new QueryGeographicCatalogService(repository);
-    }
-
     @Bean ContactRequestUseCase contactRequestUseCase(ContactRepository contacts, LostPetReportRepository reports,
                                                        SightingRepository sightings, Clock clock) {
         return new ContactRequestService(contacts, reports, sightings, clock);

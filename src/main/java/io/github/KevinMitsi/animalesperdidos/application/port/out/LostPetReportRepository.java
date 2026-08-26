@@ -23,7 +23,7 @@ public interface LostPetReportRepository {
 
     CompletionStage<List<LostPetReport>> search(SearchCriteria criteria);
 
-    record SearchCriteria(UUID ownerId, Species species, UUID departmentId, UUID cityId, UUID neighborhoodId,
+    record SearchCriteria(UUID ownerId, Species species, String departmentCode, String municipalityCode, String neighborhood,
                           io.github.KevinMitsi.animalesperdidos.domain.model.ReportStatus status,
                           Instant from, Instant to, io.github.KevinMitsi.animalesperdidos.domain.model.GeoSearchArea area,
                           boolean exactLocation, Instant cursorCreatedAt, UUID cursorId, int limit) { }

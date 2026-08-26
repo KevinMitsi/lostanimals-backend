@@ -14,7 +14,9 @@ public record CreateSightingRequest(
         @NotNull @PastOrPresent Instant observedAt,
         @DecimalMin("-90.0") @DecimalMax("90.0") double latitude,
         @DecimalMin("-180.0") @DecimalMax("180.0") double longitude,
-        @NotNull UUID neighborhoodId,
+        @NotBlank @Pattern(regexp = "^[0-9]{2}$") String departmentCode,
+        @NotBlank @Pattern(regexp = "^[0-9]{5}$") String municipalityCode,
+        @NotBlank @Size(max = 120) String neighborhood,
         @NotNull @Size(min = 1, max = 5) List<@NotBlank @Size(max = 1024) String> imageKeys,
         @Schema(description = "Explicitly publish even when a nearby sighting was detected")
         boolean confirmPossibleDuplicate) {

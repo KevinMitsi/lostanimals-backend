@@ -43,13 +43,13 @@ class QuerySightingsServiceTest {
     @Test void passesGeospatialAndTerritorialFiltersToRepository() {
         ArgumentCaptor<SightingRepository.SearchCriteria> captor = ArgumentCaptor.forClass(SightingRepository.SearchCriteria.class);
         when(repository.search(any())).thenReturn(done(List.of()));
-        UUID department = UUID.randomUUID(); UUID city = UUID.randomUUID();
-        var search = new QuerySightingsUseCase.Search(Species.CAT, department, city, null, SightingStatus.ACTIVE,
+        String department = "63"; String municipality = "63001";
+        var search = new QuerySightingsUseCase.Search(Species.CAT, department, municipality, null, SightingStatus.ACTIVE,
                 Instant.parse("2026-08-01T00:00:00Z"), null, 4.53, -75.68, 5000d, null, 10);
         new QuerySightingsService(repository, storage).searchPublic(search).toCompletableFuture().join();
         verify(repository).search(captor.capture());
-        assertEquals(department, captor.getValue().departmentId());
-        assertEquals(city, captor.getValue().cityId());
+        assertEquals(department, captor.getValue().departmentCode());
+        assertEquals(municipality, captor.getValue().municipalityCode());
         assertEquals(5000d, captor.getValue().area().radiusMeters());
         assertFalse(captor.getValue().exactLocation());
     }
@@ -75,7 +75,8 @@ class QuerySightingsServiceTest {
     private static Sighting sighting() {
         Instant now = Instant.parse("2026-08-13T12:00:00Z");
         return Sighting.create(UUID.randomUUID(), UUID.randomUUID(), Species.DOG, "Descripción", now.minusSeconds(60),
-                new GeoPoint(4.53391, -75.68114), UUID.randomUUID(), List.of("sightings/users/u/1.jpg"), now);
+                new GeoPoint(4.53391, -75.68114), new AdministrativeLocation("63","63001","Granada"),
+                List.of("sightings/users/u/1.jpg"), now);
     }
     private static <T> CompletableFuture<T> done(T value) { return CompletableFuture.completedFuture(value); }
 }

@@ -17,7 +17,8 @@ public class R2dbcSightingRepository implements SightingRepository {
     private static final String SELECT = """
             SELECT s.id,s.reporter_id,s.species,s.description,s.observed_at,
               ST_Y(s.location::geometry) latitude,ST_X(s.location::geometry) longitude,
-              s.neighborhood_id,s.status,s.created_at,s.updated_at,s.version,
+              s.department_code,s.municipality_code,s.neighborhood,
+              s.status,s.created_at,s.updated_at,s.version,
               i.id image_id,i.object_key,i.is_primary,i.sort_order
             FROM sighting s LEFT JOIN sighting_image i ON i.sighting_id=s.id
             """;
@@ -25,15 +26,18 @@ public class R2dbcSightingRepository implements SightingRepository {
 
     @Override public CompletionStage<Sighting> save(Sighting s) {
         Mono<Long> insert = databaseClient.sql("""
-                INSERT INTO sighting(id,reporter_id,species,description,observed_at,location,neighborhood_id,
+                INSERT INTO sighting(id,reporter_id,species,description,observed_at,location,
+                  department_code,municipality_code,neighborhood,
                   status,created_at,updated_at,version)
                 VALUES(:id,:reporter,:species,:description,:observed,
                   ST_SetSRID(ST_MakePoint(:longitude,:latitude),4326)::geography,
-                  :neighborhood,:status,:created,:updated,:version)
+                  :departmentCode,:municipalityCode,:neighborhood,:status,:created,:updated,:version)
                 """).bind("id",s.id()).bind("reporter",s.reporterId()).bind("species",s.species().name())
                 .bind("description",s.description()).bind("observed",s.observedAt())
                 .bind("longitude",s.location().longitude()).bind("latitude",s.location().latitude())
-                .bind("neighborhood",s.neighborhoodId()).bind("status",s.status().name())
+                .bind("departmentCode",s.administrativeLocation().departmentCode())
+                .bind("municipalityCode",s.administrativeLocation().municipalityCode())
+                .bind("neighborhood",s.administrativeLocation().neighborhood()).bind("status",s.status().name())
                 .bind("created",s.createdAt()).bind("updated",s.updatedAt()).bind("version",s.version())
                 .fetch().rowsUpdated();
         return transaction.transactional(insert.thenMany(insertImages(s)).then(Mono.just(s))).toFuture();
@@ -42,18 +46,22 @@ public class R2dbcSightingRepository implements SightingRepository {
         Mono<Long> update = databaseClient.sql("""
                 UPDATE sighting SET species=:species,description=:description,observed_at=:observed,
                   location=ST_SetSRID(ST_MakePoint(:longitude,:latitude),4326)::geography,
-                  neighborhood_id=:neighborhood,status=:status,updated_at=:updated,version=version+1
+                  department_code=:departmentCode,municipality_code=:municipalityCode,
+                  neighborhood=:neighborhood,status=:status,updated_at=:updated,version=version+1
                 WHERE id=:id AND version=:version
                 """).bind("species",s.species().name()).bind("description",s.description())
                 .bind("observed",s.observedAt()).bind("longitude",s.location().longitude())
-                .bind("latitude",s.location().latitude()).bind("neighborhood",s.neighborhoodId())
+                .bind("latitude",s.location().latitude())
+                .bind("departmentCode",s.administrativeLocation().departmentCode())
+                .bind("municipalityCode",s.administrativeLocation().municipalityCode())
+                .bind("neighborhood",s.administrativeLocation().neighborhood())
                 .bind("status",s.status().name()).bind("updated",s.updatedAt()).bind("id",s.id())
                 .bind("version",s.version()).fetch().rowsUpdated()
                 .flatMap(rows -> rows == 1 ? Mono.just(rows) : Mono.error(new ConcurrentUpdate()));
         Mono<Long> delete = databaseClient.sql("DELETE FROM sighting_image WHERE sighting_id=:id")
                 .bind("id",s.id()).fetch().rowsUpdated();
         Sighting result = new Sighting(s.id(),s.reporterId(),s.species(),s.description(),s.observedAt(),s.location(),
-                s.neighborhoodId(),s.status(),s.images(),s.createdAt(),s.updatedAt(),s.version()+1);
+                s.administrativeLocation(),s.status(),s.images(),s.createdAt(),s.updatedAt(),s.version()+1);
         return transaction.transactional(update.then(delete).thenMany(insertImages(result)).then(Mono.just(result))).toFuture();
     }
     @Override public CompletionStage<Optional<Sighting>> findById(UUID id) {
@@ -78,9 +86,9 @@ public class R2dbcSightingRepository implements SightingRepository {
         StringBuilder where=new StringBuilder(" WHERE 1=1");
         if(c.reporterId()!=null)where.append(" AND s.reporter_id=:reporter");
         if(c.species()!=null)where.append(" AND s.species=:species");
-        if(c.departmentId()!=null)where.append(" AND city.department_id=:department");
-        if(c.cityId()!=null)where.append(" AND neighborhood.city_id=:city");
-        if(c.neighborhoodId()!=null)where.append(" AND s.neighborhood_id=:neighborhood");
+        if(c.departmentCode()!=null)where.append(" AND s.department_code=:departmentCode");
+        if(c.municipalityCode()!=null)where.append(" AND s.municipality_code=:municipalityCode");
+        if(c.neighborhood()!=null)where.append(" AND lower(s.neighborhood)=lower(:neighborhood)");
         if(c.status()!=null)where.append(" AND s.status=:status");
         if(!c.exactLocation()&&c.status()==null)where.append(" AND s.status='ACTIVE'");
         if(c.from()!=null)where.append(" AND s.observed_at>=:from");
@@ -97,13 +105,13 @@ public class R2dbcSightingRepository implements SightingRepository {
                    ST_SetSRID(ST_MakePoint(:centerLongitude,:centerLatitude),4326)::geography,:radius)
                 """);
         if(c.cursorCreatedAt()!=null&&c.cursorId()!=null)where.append(" AND (s.created_at,s.id)<(:cursorAt,:cursorId)");
-        var spec=databaseClient.sql("SELECT s.id FROM sighting s JOIN neighborhood ON neighborhood.id=s.neighborhood_id"
-                +" JOIN city ON city.id=neighborhood.city_id"+where+" ORDER BY s.created_at DESC,s.id DESC LIMIT :limit");
+        var spec=databaseClient.sql("SELECT s.id FROM sighting s"+where+
+                " ORDER BY s.created_at DESC,s.id DESC LIMIT :limit");
         if(c.reporterId()!=null)spec=spec.bind("reporter",c.reporterId());
         if(c.species()!=null)spec=spec.bind("species",c.species().name());
-        if(c.departmentId()!=null)spec=spec.bind("department",c.departmentId());
-        if(c.cityId()!=null)spec=spec.bind("city",c.cityId());
-        if(c.neighborhoodId()!=null)spec=spec.bind("neighborhood",c.neighborhoodId());
+        if(c.departmentCode()!=null)spec=spec.bind("departmentCode",c.departmentCode());
+        if(c.municipalityCode()!=null)spec=spec.bind("municipalityCode",c.municipalityCode());
+        if(c.neighborhood()!=null)spec=spec.bind("neighborhood",c.neighborhood());
         if(c.status()!=null)spec=spec.bind("status",c.status().name());
         if(c.from()!=null)spec=spec.bind("from",c.from());
         if(c.to()!=null)spec=spec.bind("to",c.to());
@@ -126,14 +134,18 @@ public class R2dbcSightingRepository implements SightingRepository {
                 Boolean.TRUE.equals(r.get("is_primary",Boolean.class)),r.get("sort_order",Integer.class));
         return new RowData(r.get("id",UUID.class),r.get("reporter_id",UUID.class),Species.valueOf(r.get("species",String.class)),
                 r.get("description",String.class),r.get("observed_at",Instant.class),r.get("latitude",Double.class),
-                r.get("longitude",Double.class),r.get("neighborhood_id",UUID.class),SightingStatus.valueOf(r.get("status",String.class)),
+                r.get("longitude",Double.class),r.get("department_code",String.class),
+                r.get("municipality_code",String.class),r.get("neighborhood",String.class),
+                SightingStatus.valueOf(r.get("status",String.class)),
                 r.get("created_at",Instant.class),r.get("updated_at",Instant.class),r.get("version",Long.class),image);}
     private Mono<List<Sighting>> aggregate(Flux<RowData> rows){return rows.collectList().map(all->{Map<UUID,List<RowData>> groups=new LinkedHashMap<>();
         all.forEach(r->groups.computeIfAbsent(r.id(),x->new ArrayList<>()).add(r));return groups.values().stream().map(g->{RowData f=g.getFirst();
             return new Sighting(f.id(),f.reporter(),f.species(),f.description(),f.observed(),new GeoPoint(f.latitude(),f.longitude()),
-                    f.neighborhood(),f.status(),g.stream().map(RowData::image).filter(Objects::nonNull).toList(),
+                    new AdministrativeLocation(f.departmentCode(),f.municipalityCode(),f.neighborhood()),
+                    f.status(),g.stream().map(RowData::image).filter(Objects::nonNull).toList(),
                     f.created(),f.updated(),f.version());}).toList();});}
     private record RowData(UUID id,UUID reporter,Species species,String description,Instant observed,double latitude,
-                           double longitude,UUID neighborhood,SightingStatus status,Instant created,Instant updated,
+                           double longitude,String departmentCode,String municipalityCode,String neighborhood,
+                           SightingStatus status,Instant created,Instant updated,
                            long version,SightingImage image){}
 }

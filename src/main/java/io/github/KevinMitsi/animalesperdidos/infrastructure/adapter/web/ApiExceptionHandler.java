@@ -45,10 +45,17 @@ public class ApiExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage());
     }
 
-    @ExceptionHandler({BusinessRuleViolation.class, IllegalArgumentException.class, IllegalStateException.class})
+    @ExceptionHandler({BusinessRuleViolation.class, IllegalStateException.class})
     ProblemDetail businessRule(RuntimeException exception) {
         ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage());
         detail.setTitle("Business rule violation");
+        return detail;
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    ProblemDetail invalidArgument(IllegalArgumentException exception) {
+        ProblemDetail detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+        detail.setTitle("Invalid request");
         return detail;
     }
 
@@ -90,7 +97,7 @@ public class ApiExceptionHandler {
         if (cause instanceof ResourceNotFound missing) return notFound(missing);
         if (cause instanceof ForbiddenOperation forbidden) return forbidden(forbidden);
         if (cause instanceof ConcurrentUpdate conflict) return conflict(conflict);
-        if (cause instanceof IllegalArgumentException invalid) return businessRule(invalid);
+        if (cause instanceof IllegalArgumentException invalid) return invalidArgument(invalid);
         if (cause instanceof IllegalStateException invalidState) return businessRule(invalidState);
         return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "The operation could not be completed");
     }

@@ -18,10 +18,10 @@ public final class ManageSightingService implements ManageSightingUseCase {
     }
     @Override public CompletionStage<Void> edit(UUID actorId, UUID id, Edit command) {
         if (command.observedAt().isAfter(clock.instant())) throw new BusinessRuleViolation("Observation cannot be in the future");
-        return serviceAreas.isNeighborhoodEnabled(command.neighborhoodId()).thenCompose(enabled -> {
-            if (!enabled) return SightingImagePolicy.failed(new BusinessRuleViolation("Publication area is not enabled"));
+        return serviceAreas.isMunicipalityEnabled(command.administrativeLocation().municipalityCode()).thenCompose(enabled -> {
+            if (!enabled) return SightingImagePolicy.failed(new BusinessRuleViolation("The municipality is not enabled for publications"));
             return mutate(actorId, id, sighting -> sighting.edit(command.species(), command.description(), command.observedAt(),
-                new GeoPoint(command.latitude(), command.longitude()), command.neighborhoodId(), clock.instant()))
+                new GeoPoint(command.latitude(), command.longitude()), command.administrativeLocation(), clock.instant()))
                 .thenApply(ignored -> null);
         });
     }

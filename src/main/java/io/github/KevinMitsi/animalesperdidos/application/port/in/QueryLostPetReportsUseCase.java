@@ -13,14 +13,15 @@ public interface QueryLostPetReportsUseCase {
     CompletionStage<Page> searchPublic(Search command);
     CompletionStage<Page> mine(UUID ownerId, Search command);
 
-    record Search(Species species, UUID departmentId, UUID cityId, UUID neighborhoodId, ReportStatus status,
+    record Search(Species species, String departmentCode, String municipalityCode, String neighborhood, ReportStatus status,
                   Instant from, Instant to, Double latitude, Double longitude, Double radiusMeters,
                   String cursor, int limit) { }
 
     record Page(List<ReportView> items, String nextCursor) { }
 
     record ReportView(UUID id, String petName, Species species, String description,
-                      Instant disappearedAt, double latitude, double longitude, UUID neighborhoodId,
+                      Instant disappearedAt, double latitude, double longitude, String departmentCode,
+                      String municipalityCode, String neighborhood,
                       ReportStatus status, List<ImageView> images, Instant createdAt,
                       Instant updatedAt, long version) { }
 

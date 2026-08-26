@@ -33,6 +33,8 @@ que JavaScript lo establezca; S3 y la API verifican el tamaño real del objeto d
 
 La paginación usa cursor estable `(created_at,id)` y pide como máximo 50 elementos. Las coordenadas públicas se redondean a tres decimales; la ubicación exacta solo se devuelve al propietario autenticado.
 
+Creación, edición y respuestas usan `departmentCode` (2 dígitos), `municipalityCode` (5 dígitos) y `neighborhood` (texto libre, máximo 120 caracteres). El municipio debe comenzar por el código de departamento. El frontend resuelve los nombres desde el dataset DIVIPOLA oficial `gdxc-w37w`; el backend no confía ni persiste nombres territoriales enviados por clientes.
+
 ## Configuración del bucket S3
 
 - Activar **Block Public Access** en las cuatro opciones.

@@ -8,6 +8,7 @@ import io.github.KevinMitsi.animalesperdidos.application.port.out.NotificationPo
 import io.github.KevinMitsi.animalesperdidos.application.port.out.ServiceAreaRepository;
 import io.github.KevinMitsi.animalesperdidos.domain.model.LostPetReport;
 import io.github.KevinMitsi.animalesperdidos.domain.model.Species;
+import io.github.KevinMitsi.animalesperdidos.domain.model.AdministrativeLocation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,7 +48,7 @@ class ReportLostPetServiceTest {
 
     @BeforeEach
     void setUp() {
-        lenient().when(serviceAreas.isNeighborhoodEnabled(any())).thenReturn(completed(true));
+        lenient().when(serviceAreas.isMunicipalityEnabled(any())).thenReturn(completed(true));
         service = new ReportLostPetService(repository, storage, notification,
                 Clock.fixed(NOW, ZoneOffset.UTC), serviceAreas);
     }
@@ -84,7 +85,8 @@ class ReportLostPetServiceTest {
 
     private static ReportLostPetUseCase.Command command() {
         return new ReportLostPetUseCase.Command(OWNER_ID, "Luna", Species.DOG, "Collar rojo",
-                NOW.minusSeconds(3600), 4.5339, -75.6811, UUID.randomUUID(),
+                NOW.minusSeconds(3600), 4.5339, -75.6811,
+                new AdministrativeLocation("63","63001","Granada"),
                 of(IMAGE_KEY));
     }
 

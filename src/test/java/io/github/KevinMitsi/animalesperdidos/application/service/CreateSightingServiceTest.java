@@ -25,7 +25,7 @@ class CreateSightingServiceTest {
     @Mock ServiceAreaRepository serviceAreas;
     private CreateSightingService service;
 
-    @BeforeEach void setUp() { lenient().when(serviceAreas.isNeighborhoodEnabled(any())).thenReturn(done(true));
+    @BeforeEach void setUp() { lenient().when(serviceAreas.isMunicipalityEnabled(any())).thenReturn(done(true));
         service = new CreateSightingService(repository, storage, Clock.fixed(NOW, ZoneOffset.UTC), serviceAreas); }
 
     @Test void warnsAboutNearbyDuplicateWithoutPublishingOrTouchingStorage() {
@@ -52,7 +52,7 @@ class CreateSightingServiceTest {
     }
 
     @Test void rejectsDisabledCityBeforeQueryingDuplicatesOrStorage() {
-        when(serviceAreas.isNeighborhoodEnabled(any())).thenReturn(done(false));
+        when(serviceAreas.isMunicipalityEnabled(any())).thenReturn(done(false));
         var error=assertThrows(java.util.concurrent.CompletionException.class,
                 ()->service.create(command(false)).toCompletableFuture().join());
         assertInstanceOf(io.github.KevinMitsi.animalesperdidos.application.exception.BusinessRuleViolation.class,error.getCause());
@@ -61,7 +61,7 @@ class CreateSightingServiceTest {
 
     private static CreateSightingUseCase.Command command(boolean confirm) {
         return new CreateSightingUseCase.Command(REPORTER, Species.DOG, "Visto cerca al parque", NOW.minusSeconds(300),
-                4.5339, -75.6811, UUID.randomUUID(), List.of(STAGING), confirm);
+                4.5339, -75.6811, new AdministrativeLocation("63","63001","Granada"), List.of(STAGING), confirm);
     }
     private static <T> CompletableFuture<T> done(T value) { return CompletableFuture.completedFuture(value); }
 }

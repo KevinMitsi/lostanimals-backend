@@ -31,7 +31,7 @@ Si existe, `POST /api/v1/sightings` responde `200` con `created=false` y los dat
 | `DELETE` | `/api/v1/sightings/{id}/images/{imageId}` | JWT/propietario | Eliminar conservando al menos una |
 | `PUT` | `/api/v1/sightings/{id}/images/{imageId}/primary` | JWT/propietario | Elegir portada |
 
-Los filtros disponibles son especie, barrio y estado. La paginación usa el cursor estable `(created_at,id)`, acepta como máximo 50 elementos y la ubicación pública se redondea a tres decimales. Las imágenes se sirven mediante URL firmada válida por 15 minutos.
+Los filtros disponibles son especie, `departmentCode`, `municipalityCode`, barrio textual y estado. La coincidencia de barrio es exacta tras normalizar espacios y no distingue mayúsculas. La paginación usa el cursor estable `(created_at,id)`, acepta como máximo 50 elementos y la ubicación pública se redondea a tres decimales. Las imágenes se sirven mediante URL firmada válida por 15 minutos.
 
 ## Persistencia e imágenes
 

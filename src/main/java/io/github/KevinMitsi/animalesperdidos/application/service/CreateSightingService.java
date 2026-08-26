@@ -19,8 +19,8 @@ public final class CreateSightingService implements CreateSightingUseCase {
         Instant now = clock.instant();
         if (command.observedAt().isAfter(now)) throw new BusinessRuleViolation("Observation cannot be in the future");
         GeoPoint point = new GeoPoint(command.latitude(), command.longitude());
-        return serviceAreas.isNeighborhoodEnabled(command.neighborhoodId()).thenCompose(enabled -> {
-            if (!enabled) return SightingImagePolicy.failed(new BusinessRuleViolation("Publication area is not enabled"));
+        return serviceAreas.isMunicipalityEnabled(command.administrativeLocation().municipalityCode()).thenCompose(enabled -> {
+            if (!enabled) return SightingImagePolicy.failed(new BusinessRuleViolation("The municipality is not enabled for publications"));
             return repository.findNearbyDuplicate(command.species(), point, command.observedAt().minus(Duration.ofHours(2)),
                         command.observedAt().plus(Duration.ofHours(2)), 50)
                 .thenCompose(candidate -> {
@@ -36,7 +36,7 @@ public final class CreateSightingService implements CreateSightingUseCase {
     }
     private CompletionStage<Result> persist(Command command, GeoPoint point, List<String> keys, Instant now) {
         Sighting sighting = Sighting.create(UUID.randomUUID(), command.reporterId(), command.species(),
-                command.description(), command.observedAt(), point, command.neighborhoodId(), keys, now);
+                command.description(), command.observedAt(), point, command.administrativeLocation(), keys, now);
         return repository.save(sighting)
                 .exceptionallyCompose(error -> SightingImagePolicy.delete(storage, keys)
                         .thenCompose(ignored -> SightingImagePolicy.failed(error)))

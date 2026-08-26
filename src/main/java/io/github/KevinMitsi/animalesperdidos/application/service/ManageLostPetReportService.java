@@ -33,10 +33,10 @@ public final class ManageLostPetReportService implements ManageLostPetReportUseC
 
     @Override
     public CompletionStage<Void> edit(UUID actorId, UUID reportId, Edit command) {
-        return requireEnabled(command.neighborhoodId()).thenCompose(ignored -> mutate(actorId, reportId,
+        return requireEnabled(command.administrativeLocation().municipalityCode()).thenCompose(ignored -> mutate(actorId, reportId,
                 report -> report.edit(command.petName(), command.species(), command.description(),
                 command.disappearedAt(), new GeoPoint(command.latitude(), command.longitude()),
-                command.neighborhoodId(), clock.instant()))).thenApply(ignored -> null);
+                command.administrativeLocation(), clock.instant()))).thenApply(ignored -> null);
     }
 
     @Override
@@ -92,10 +92,10 @@ public final class ManageLostPetReportService implements ManageLostPetReportUseC
         });
     }
 
-    private CompletionStage<Void> requireEnabled(UUID neighborhoodId) {
-        return serviceAreas.isNeighborhoodEnabled(neighborhoodId).thenCompose(enabled -> enabled
+    private CompletionStage<Void> requireEnabled(String municipalityCode) {
+        return serviceAreas.isMunicipalityEnabled(municipalityCode).thenCompose(enabled -> enabled
                 ? CompletableFuture.completedFuture(null)
-                : failed(new BusinessRuleViolation("Publication area is not enabled")));
+                : failed(new BusinessRuleViolation("The municipality is not enabled for publications")));
     }
 
     private static boolean validImage(ImageStoragePort.StoredObject object) {

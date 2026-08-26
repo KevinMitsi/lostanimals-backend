@@ -25,6 +25,15 @@ final class SearchCriteriaPolicy {
         }
     }
 
+    static String validateLocationFilters(String departmentCode, String municipalityCode, String neighborhood) {
+        if (departmentCode != null) AdministrativeLocation.validateDepartmentCode(departmentCode);
+        if (municipalityCode != null) AdministrativeLocation.validateMunicipalityCode(municipalityCode);
+        if (departmentCode != null && municipalityCode != null && !municipalityCode.startsWith(departmentCode)) {
+            throw new IllegalArgumentException("municipalityCode does not belong to departmentCode");
+        }
+        return neighborhood == null ? null : AdministrativeLocation.normalizeNeighborhood(neighborhood);
+    }
+
     static Cursor decode(String encoded) {
         if (encoded == null || encoded.isBlank()) return new Cursor(null, null);
         try {

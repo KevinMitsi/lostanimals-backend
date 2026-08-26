@@ -49,8 +49,8 @@ public final class ReportLostPetService implements ReportLostPetUseCase {
         CompletionStage<Long> dailyCount = repository.countCreatedByOwnerSince(command.ownerId(),
                 now.minus(Duration.ofDays(1)));
 
-        return serviceAreas.isNeighborhoodEnabled(command.neighborhoodId()).thenCompose(enabled -> {
-            if (!enabled) return failed(new BusinessRuleViolation("Publication area is not enabled"));
+        return serviceAreas.isMunicipalityEnabled(command.administrativeLocation().municipalityCode()).thenCompose(enabled -> {
+            if (!enabled) return failed(new BusinessRuleViolation("The municipality is not enabled for publications"));
             return duplicate.thenCombine(dailyCount, Checks::new);
         })
                 .thenCompose(this::enforcePublicationRules)
@@ -62,7 +62,7 @@ public final class ReportLostPetService implements ReportLostPetUseCase {
         UUID reportId = UUID.randomUUID();
         LostPetReport report = LostPetReport.create(reportId, command.ownerId(), command.petName(),
                 command.species(), command.description(), command.disappearedAt(),
-                new GeoPoint(command.latitude(), command.longitude()), command.neighborhoodId(),
+                new GeoPoint(command.latitude(), command.longitude()), command.administrativeLocation(),
                 sanitizedKeys, now);
         return repository.save(report)
                 .exceptionallyCompose(error -> deleteImages(sanitizedKeys).thenCompose(ignored -> failed(error)))
