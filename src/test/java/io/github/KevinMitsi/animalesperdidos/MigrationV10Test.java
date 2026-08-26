@@ -16,9 +16,8 @@ class MigrationV10Test {
             String sql = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
             assertTrue(sql.contains("department_code = '63'"));
             assertTrue(sql.contains("municipality_code = '63001'"));
-            assertTrue(sql.contains("JOIN neighborhood"));
-            assertTrue(sql.contains("backfill left lost_pet_report"));
-            assertTrue(sql.contains("backfill left sighting"));
+            assertTrue(sql.contains("FROM neighborhood"));
+            assertTrue(sql.contains("DROP TABLE IF EXISTS neighborhood CASCADE"));
             assertFalse(sql.matches("(?is).*DELETE\\s+FROM\\s+(lost_pet_report|sighting).*"));
         }
     }
