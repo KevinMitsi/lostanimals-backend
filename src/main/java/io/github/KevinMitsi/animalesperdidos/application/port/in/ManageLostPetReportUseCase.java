@@ -2,6 +2,7 @@ package io.github.KevinMitsi.animalesperdidos.application.port.in;
 
 import io.github.KevinMitsi.animalesperdidos.domain.model.ReportStatus;
 import io.github.KevinMitsi.animalesperdidos.domain.model.Species;
+import io.github.KevinMitsi.animalesperdidos.domain.model.AdministrativeLocation;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -15,5 +16,5 @@ public interface ManageLostPetReportUseCase {
     CompletionStage<Void> setPrimaryImage(UUID actorId, UUID reportId, UUID imageId);
 
     record Edit(String petName, Species species, String description, Instant disappearedAt,
-                double latitude, double longitude, UUID neighborhoodId) { }
+                double latitude, double longitude, AdministrativeLocation administrativeLocation) { }
 }

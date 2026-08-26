@@ -7,11 +7,11 @@ import java.util.UUID;
 import java.util.stream.IntStream;
 
 public record Sighting(UUID id, UUID reporterId, Species species, String description, Instant observedAt,
-                       GeoPoint location, UUID neighborhoodId, SightingStatus status,
+                       GeoPoint location, AdministrativeLocation administrativeLocation, SightingStatus status,
                        List<SightingImage> images, Instant createdAt, Instant updatedAt, long version) {
     public Sighting {
         Objects.requireNonNull(id); Objects.requireNonNull(reporterId); Objects.requireNonNull(species);
-        Objects.requireNonNull(observedAt); Objects.requireNonNull(location); Objects.requireNonNull(neighborhoodId);
+        Objects.requireNonNull(observedAt); Objects.requireNonNull(location); Objects.requireNonNull(administrativeLocation);
         Objects.requireNonNull(status); Objects.requireNonNull(createdAt); Objects.requireNonNull(updatedAt);
         if (description == null || description.isBlank()) throw new IllegalArgumentException("description is required");
         description = description.trim();
@@ -26,23 +26,23 @@ public record Sighting(UUID id, UUID reporterId, Species species, String descrip
     }
 
     public static Sighting create(UUID id, UUID reporterId, Species species, String description, Instant observedAt,
-                                  GeoPoint location, UUID neighborhoodId, List<String> keys, Instant now) {
+                                  GeoPoint location, AdministrativeLocation administrativeLocation, List<String> keys, Instant now) {
         List<SightingImage> images = IntStream.range(0, keys.size())
                 .mapToObj(i -> new SightingImage(UUID.randomUUID(), keys.get(i), i == 0, i)).toList();
-        return new Sighting(id, reporterId, species, description, observedAt, location, neighborhoodId,
+        return new Sighting(id, reporterId, species, description, observedAt, location, administrativeLocation,
                 SightingStatus.ACTIVE, images, now, now, 0);
     }
 
     public Sighting edit(Species species, String description, Instant observedAt, GeoPoint location,
-                         UUID neighborhoodId, Instant now) {
+                         AdministrativeLocation administrativeLocation, Instant now) {
         requireActive();
-        return new Sighting(id, reporterId, species, description, observedAt, location, neighborhoodId,
+        return new Sighting(id, reporterId, species, description, observedAt, location, administrativeLocation,
                 status, images, createdAt, now, version);
     }
 
     public Sighting close(Instant now) {
         requireActive();
-        return new Sighting(id, reporterId, species, description, observedAt, location, neighborhoodId,
+        return new Sighting(id, reporterId, species, description, observedAt, location, administrativeLocation,
                 SightingStatus.CLOSED, images, createdAt, now, version);
     }
 
@@ -75,7 +75,7 @@ public record Sighting(UUID id, UUID reporterId, Species species, String descrip
     }
 
     private Sighting withImages(List<SightingImage> value, Instant now) {
-        return new Sighting(id, reporterId, species, description, observedAt, location, neighborhoodId,
+        return new Sighting(id, reporterId, species, description, observedAt, location, administrativeLocation,
                 status, value, createdAt, now, version);
     }
     private static List<SightingImage> normalize(List<SightingImage> source, UUID primary) {

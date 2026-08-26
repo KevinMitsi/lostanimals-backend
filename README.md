@@ -1,6 +1,6 @@
 # Animales Perdidos Colombia
 
-Backend para ayudar a reunir animales perdidos con sus familias después de una emergencia. La primera fase opera en Armenia, Quindío, pero el modelo geográfico permite crecer por ciudad y departamento sin cambiar el dominio.
+Backend para ayudar a reunir animales perdidos con sus familias después de una emergencia, con cobertura nacional mediante códigos DIVIPOLA.
 
 ## Arquitectura
 
@@ -53,7 +53,7 @@ CLOUDFLARE_TURNSTILE_SECRET=<secret del widget>
 CLOUDFLARE_EXPECTED_HOSTNAME=app.example.com
 ```
 
-Flyway crea el esquema, habilita PostGIS y carga Armenia junto con cinco barrios iniciales. Antes de producción se debe reemplazar esa semilla mínima por el catálogo oficial completo.
+Flyway crea el esquema, habilita PostGIS y migra las ubicaciones históricas de Armenia a los códigos `63`/`63001`. El backend no replica el catálogo territorial. El frontend consulta directamente el dataset oficial **DIVIPOLA - Códigos municipios** (`gdxc-w37w`) en Datos Abiertos Colombia mediante `https://www.datos.gov.co/api/v3/views/gdxc-w37w/query.json`.
 
 ```powershell
 .\gradlew.bat test
@@ -81,9 +81,9 @@ La gestión completa de reportes, carga directa privada a S3, sanitización de i
 
 La publicación, detección PostGIS de posibles duplicados y gestión de avistamientos están en [docs/FASE_3_AVISTAMIENTOS.md](docs/FASE_3_AVISTAMIENTOS.md).
 
-La búsqueda por radio, filtros territoriales, privacidad contra triangulación y catálogo geográfico están en [docs/FASE_4_BUSQUEDA_GEOESPACIAL.md](docs/FASE_4_BUSQUEDA_GEOESPACIAL.md).
+La búsqueda por radio, filtros territoriales DIVIPOLA y privacidad contra triangulación están en [docs/FASE_4_BUSQUEDA_GEOESPACIAL.md](docs/FASE_4_BUSQUEDA_GEOESPACIAL.md).
 
-El contacto con consentimiento, mensajería interna, moderación de reencuentros y operación limitada a Armenia están en [docs/FASE_5_CONTACTO_SEGURO_MVP.md](docs/FASE_5_CONTACTO_SEGURO_MVP.md).
+El contacto con consentimiento, mensajería interna, moderación de reencuentros y administración de excepciones territoriales están en [docs/FASE_5_CONTACTO_SEGURO_MVP.md](docs/FASE_5_CONTACTO_SEGURO_MVP.md).
 
 El envío y recepción de mensajes en tiempo real, incluido el cambio requerido en front-end, están en [docs/WEBSOCKET_MENSAJERIA.md](docs/WEBSOCKET_MENSAJERIA.md).
 
@@ -94,7 +94,7 @@ La configuración de SQS, SES, SNS, DLQ, KMS, IAM y dispositivos push está en [
 `POST /api/v1/lost-pet-reports`, tipo `application/json` después de la carga directa a S3:
 
 - encabezado `Authorization: Bearer <jwt>`; el dueño se obtiene del claim firmado `sub`;
-- cuerpo JSON con `petName`, `species`, `description`, `disappearedAt`, `latitude`, `longitude`, `neighborhoodId` e `imageKeys`;
+- cuerpo JSON con `petName`, `species`, `description`, `disappearedAt`, `latitude`, `longitude`, `departmentCode`, `municipalityCode`, `neighborhood` e `imageKeys`;
 - entre una y cinco claves obtenidas previamente en `/image-uploads`.
 
 La configuración de Turnstile, WAF, rate limiting y aislamiento del origen está en [docs/CLOUDFLARE.md](docs/CLOUDFLARE.md).
@@ -107,4 +107,4 @@ La configuración de Turnstile, WAF, rate limiting y aislamiento del origen est�
 - Si persiste el reporte falla, el caso de uso compensa eliminando de S3 las imágenes subidas.
 - Los datos de contacto están separados y no aparecen en el contrato público.
 
-El backend queda en alcance MVP para pruebas en Armenia. Las fases posteriores permanecen en el roadmap y pueden habilitarse después de validar el funcionamiento con usuarios reales.
+Los reportes y avistamientos aceptan cualquier municipio colombiano por defecto. `service_area` solo almacena configuraciones explícitas; una fila con `enabled=false` bloquea ese municipio. El barrio es texto libre obligatorio, pues no existe un catálogo nacional completo de barrios.

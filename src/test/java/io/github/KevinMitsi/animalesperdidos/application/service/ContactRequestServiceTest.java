@@ -38,6 +38,6 @@ class ContactRequestServiceTest {
         assertInstanceOf(ForbiddenOperation.class,error.getCause()); verify(contacts,never()).saveRequest(any());
     }
     private static Sighting sighting(){return Sighting.create(UUID.randomUUID(),UUID.randomUUID(),Species.DOG,"Descripción",
-            NOW.minusSeconds(30),new GeoPoint(4.53,-75.68),UUID.randomUUID(),List.of("key"),NOW);}
+            NOW.minusSeconds(30),new GeoPoint(4.53,-75.68),new AdministrativeLocation("63","63001","Granada"),List.of("key"),NOW);}
     private static <T> CompletableFuture<T> done(T value){return CompletableFuture.completedFuture(value);}
 }

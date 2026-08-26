@@ -22,10 +22,12 @@ public final class QuerySightingsService implements QuerySightingsUseCase {
     private CompletionStage<Page> search(UUID reporterId, Search search, boolean exact) {
         int limit = Math.max(1, Math.min(search.limit(), 50));
         SearchCriteriaPolicy.validateRange(search.from(), search.to());
+        String neighborhood = SearchCriteriaPolicy.validateLocationFilters(search.departmentCode(),
+                search.municipalityCode(), search.neighborhood());
         var area = SearchCriteriaPolicy.area(search.latitude(), search.longitude(), search.radiusMeters());
         var cursor = SearchCriteriaPolicy.decode(search.cursor());
-        var criteria = new SightingRepository.SearchCriteria(reporterId, search.species(), search.departmentId(),
-                search.cityId(), search.neighborhoodId(), search.status(), search.from(), search.to(), area,
+        var criteria = new SightingRepository.SearchCriteria(reporterId, search.species(), search.departmentCode(),
+                search.municipalityCode(), neighborhood, search.status(), search.from(), search.to(), area,
                 exact, cursor.createdAt(), cursor.id(), limit + 1);
         return repository.search(criteria).thenCompose(found -> {
             boolean next = found.size() > limit; List<Sighting> selected = found.stream().limit(limit).toList();
@@ -40,7 +42,10 @@ public final class QuerySightingsService implements QuerySightingsUseCase {
                 .thenApply(images -> new View(sighting.id(), sighting.species(), sighting.description(), sighting.observedAt(),
                         exact ? sighting.location().latitude() : approximate(sighting.location().latitude()),
                         exact ? sighting.location().longitude() : approximate(sighting.location().longitude()),
-                        sighting.neighborhoodId(), sighting.status(), images, sighting.createdAt(), sighting.updatedAt(), sighting.version()));
+                        sighting.administrativeLocation().departmentCode(),
+                        sighting.administrativeLocation().municipalityCode(),
+                        sighting.administrativeLocation().neighborhood(), sighting.status(), images,
+                        sighting.createdAt(), sighting.updatedAt(), sighting.version()));
     }
     private static double approximate(double value) { return Math.round(value * 1000d) / 1000d; }
     private static <T> CompletionStage<List<T>> sequence(List<? extends CompletionStage<T>> stages) {

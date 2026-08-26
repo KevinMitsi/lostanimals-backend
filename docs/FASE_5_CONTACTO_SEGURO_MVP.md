@@ -1,8 +1,8 @@
-# Fase 5 — Contacto seguro y MVP Armenia
+# Fase 5 — Contacto seguro y cobertura nacional
 
 ## Alcance terminado
 
-El MVP permite que la comunidad de Armenia publique mascotas perdidas y avistamientos, solicite contacto con consentimiento y converse dentro de la plataforma. No se entregan automáticamente correo, teléfono ni cédula entre usuarios.
+El MVP permite que la comunidad colombiana publique mascotas perdidas y avistamientos, solicite contacto con consentimiento y converse dentro de la plataforma. No se entregan automáticamente correo, teléfono ni cédula entre usuarios.
 
 El flujo es:
 
@@ -61,17 +61,17 @@ UPDATE app_user SET role='ADMIN' WHERE lower(email)=lower('administrador@dominio
 
 No se incluyen credenciales administrativas predeterminadas ni contraseñas en Flyway.
 
-## Armenia y expansión futura
+## Cobertura nacional y excepciones
 
-`service_area` contiene las ciudades habilitadas. Flyway V7 habilita únicamente Armenia. Crear o editar reportes y avistamientos consulta `ServiceAreaRepository`; una zona deshabilitada se rechaza antes de procesar imágenes.
+`service_area` contiene configuraciones explícitas por `municipality_code`. Una municipalidad sin fila está habilitada por defecto; una fila con `enabled=false` bloquea la creación o edición antes de procesar imágenes. Flyway V10 migra la configuración de Armenia a `63001`.
 
-El catálogo público solo muestra departamentos, ciudades y barrios habilitados. El administrador puede preparar nuevas ciudades en el catálogo y activarlas mediante:
+El backend no lista municipios ni barrios. El frontend resuelve los nombres con el dataset DIVIPOLA oficial y el administrador persiste únicamente excepciones mediante:
 
 ```text
-PUT /api/v1/admin/service-areas/{cityId}
+PUT /api/v1/admin/service-areas/{municipalityCode}
 ```
 
-Así la expansión territorial es configuración y datos, no un cambio en los casos de publicación.
+`GET /api/v1/admin/service-areas` devuelve solo las configuraciones persistidas, no los 1.122 municipios del catálogo oficial.
 
 ## Persistencia y privacidad
 

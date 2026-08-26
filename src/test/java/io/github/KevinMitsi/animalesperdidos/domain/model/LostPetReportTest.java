@@ -16,7 +16,7 @@ class LostPetReportTest {
 
         assertThrows(IllegalArgumentException.class, () -> LostPetReport.create(
                 UUID.randomUUID(), UUID.randomUUID(), "Luna", Species.DOG, "Collar rojo",
-                now.plusSeconds(1), new GeoPoint(4.5339, -75.6811), UUID.randomUUID(),
+                now.plusSeconds(1), new GeoPoint(4.5339, -75.6811), new AdministrativeLocation("63","63001","Granada"),
                 List.of("reports/luna.jpg"), now));
     }
 
@@ -26,6 +26,6 @@ class LostPetReportTest {
 
         assertThrows(IllegalArgumentException.class, () -> LostPetReport.create(
                 UUID.randomUUID(), UUID.randomUUID(), "Luna", Species.DOG, "Collar rojo",
-                now, new GeoPoint(4.5339, -75.6811), UUID.randomUUID(), List.of(), now));
+                now, new GeoPoint(4.5339, -75.6811), new AdministrativeLocation("63","63001","Granada"), List.of(), now));
     }
 }

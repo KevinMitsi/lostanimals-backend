@@ -44,10 +44,12 @@ public final class QueryLostPetReportsService implements QueryLostPetReportsUseC
     private CompletionStage<Page> search(UUID ownerId, Search command, boolean exactLocation) {
         int limit = Math.max(1, Math.min(command.limit(), 50));
         SearchCriteriaPolicy.validateRange(command.from(), command.to());
+        String neighborhood = SearchCriteriaPolicy.validateLocationFilters(command.departmentCode(),
+                command.municipalityCode(), command.neighborhood());
         var area = SearchCriteriaPolicy.area(command.latitude(), command.longitude(), command.radiusMeters());
         var cursor = SearchCriteriaPolicy.decode(command.cursor());
         LostPetReportRepository.SearchCriteria criteria = new LostPetReportRepository.SearchCriteria(ownerId,
-                command.species(), command.departmentId(), command.cityId(), command.neighborhoodId(), command.status(),
+                command.species(), command.departmentCode(), command.municipalityCode(), neighborhood, command.status(),
                 command.from(), command.to(), area, exactLocation, cursor.createdAt(), cursor.id(), limit + 1);
         return repository.search(criteria).thenCompose(found -> {
             boolean hasNext = found.size() > limit;
@@ -68,7 +70,9 @@ public final class QueryLostPetReportsService implements QueryLostPetReportsUseC
                 report.description(), report.disappearedAt(),
                 exactLocation ? report.lastSeenAt().latitude() : approximate(report.lastSeenAt().latitude()),
                 exactLocation ? report.lastSeenAt().longitude() : approximate(report.lastSeenAt().longitude()),
-                report.neighborhoodId(), report.status(), imageViews, report.createdAt(), report.updatedAt(), report.version()));
+                report.administrativeLocation().departmentCode(), report.administrativeLocation().municipalityCode(),
+                report.administrativeLocation().neighborhood(), report.status(), imageViews,
+                report.createdAt(), report.updatedAt(), report.version()));
     }
 
     private CompletionStage<ImageView> toImageView(LostPetImage image) {

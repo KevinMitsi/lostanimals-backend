@@ -37,7 +37,7 @@ class ManageLostPetReportServiceTest {
 
     @BeforeEach
     void setUp() {
-        lenient().when(serviceAreas.isNeighborhoodEnabled(any())).thenReturn(completed(true));
+        lenient().when(serviceAreas.isMunicipalityEnabled(any())).thenReturn(completed(true));
         service = new ManageLostPetReportService(repository, storage, Clock.fixed(NOW, ZoneOffset.UTC), serviceAreas);
     }
 
@@ -47,7 +47,8 @@ class ManageLostPetReportServiceTest {
         when(repository.findById(report.id())).thenReturn(completed(Optional.of(report)));
         when(repository.update(any())).thenAnswer(invocation -> completed(invocation.getArgument(0)));
         ManageLostPetReportUseCase.Edit edit = new ManageLostPetReportUseCase.Edit("Luna nueva", Species.CAT,
-                "Actualizada", NOW.minusSeconds(7200), 4.54, -75.68, UUID.randomUUID());
+                "Actualizada", NOW.minusSeconds(7200), 4.54, -75.68,
+                new AdministrativeLocation("63","63001","Granada"));
 
         service.edit(OWNER, report.id(), edit).toCompletableFuture().join();
 
@@ -108,7 +109,8 @@ class ManageLostPetReportServiceTest {
 
     static LostPetReport report(List<String> keys) {
         return LostPetReport.create(UUID.randomUUID(), OWNER, "Luna", Species.DOG, "Collar rojo",
-                NOW.minusSeconds(3600), new GeoPoint(4.5339, -75.6811), UUID.randomUUID(), keys,
+                NOW.minusSeconds(3600), new GeoPoint(4.5339, -75.6811),
+                new AdministrativeLocation("63","63001","Granada"), keys,
                 NOW.minusSeconds(60));
     }
 }

@@ -13,7 +13,7 @@ public record LostPetReport(
         String description,
         Instant disappearedAt,
         GeoPoint lastSeenAt,
-        UUID neighborhoodId,
+        AdministrativeLocation administrativeLocation,
         ReportStatus status,
         List<LostPetImage> images,
         Instant createdAt,
@@ -26,7 +26,7 @@ public record LostPetReport(
         Objects.requireNonNull(species);
         Objects.requireNonNull(disappearedAt);
         Objects.requireNonNull(lastSeenAt);
-        Objects.requireNonNull(neighborhoodId);
+        Objects.requireNonNull(administrativeLocation);
         Objects.requireNonNull(status);
         Objects.requireNonNull(createdAt);
         Objects.requireNonNull(updatedAt);
@@ -47,26 +47,26 @@ public record LostPetReport(
 
     public static LostPetReport create(UUID id, UUID ownerId, String petName, Species species,
                                        String description, Instant disappearedAt, GeoPoint lastSeenAt,
-                                       UUID neighborhoodId, List<String> imageKeys, Instant now) {
+                                       AdministrativeLocation administrativeLocation, List<String> imageKeys, Instant now) {
         List<LostPetImage> images = java.util.stream.IntStream.range(0, imageKeys.size())
                 .mapToObj(index -> new LostPetImage(UUID.randomUUID(), imageKeys.get(index), index == 0, index))
                 .toList();
         return new LostPetReport(id, ownerId, petName, species, description, disappearedAt,
-                lastSeenAt, neighborhoodId, ReportStatus.LOST, images, now, now, 0);
+                lastSeenAt, administrativeLocation, ReportStatus.LOST, images, now, now, 0);
     }
 
     public LostPetReport edit(String petName, Species species, String description, Instant disappearedAt,
-                              GeoPoint lastSeenAt, UUID neighborhoodId, Instant now) {
+                              GeoPoint lastSeenAt, AdministrativeLocation administrativeLocation, Instant now) {
         if (status != ReportStatus.LOST) throw new IllegalStateException("Only active reports can be edited");
         return new LostPetReport(id, ownerId, petName, species, description, disappearedAt, lastSeenAt,
-                neighborhoodId, status, images, createdAt, now, version);
+                administrativeLocation, status, images, createdAt, now, version);
     }
 
     public LostPetReport changeStatus(ReportStatus newStatus, Instant now) {
         if (status != ReportStatus.LOST) throw new IllegalStateException("A closed report cannot change status");
         if (newStatus == ReportStatus.LOST) throw new IllegalArgumentException("Status must close the report");
         return new LostPetReport(id, ownerId, petName, species, description, disappearedAt, lastSeenAt,
-                neighborhoodId, newStatus, images, createdAt, now, version);
+                administrativeLocation, newStatus, images, createdAt, now, version);
     }
 
     public LostPetReport reopen(Instant now, java.time.Duration allowedWindow) {
@@ -76,7 +76,7 @@ public record LostPetReport(
             throw new IllegalStateException("The reopening window has expired");
         }
         return new LostPetReport(id, ownerId, petName, species, description, disappearedAt, lastSeenAt,
-                neighborhoodId, ReportStatus.LOST, images, createdAt, now, version);
+                administrativeLocation, ReportStatus.LOST, images, createdAt, now, version);
     }
 
     public LostPetReport addImage(LostPetImage image, Instant now) {
@@ -111,7 +111,7 @@ public record LostPetReport(
 
     private LostPetReport copyWithImages(List<LostPetImage> updatedImages, Instant now) {
         return new LostPetReport(id, ownerId, petName, species, description, disappearedAt, lastSeenAt,
-                neighborhoodId, status, updatedImages, createdAt, now, version);
+                administrativeLocation, status, updatedImages, createdAt, now, version);
     }
 
     private static List<LostPetImage> normalize(List<LostPetImage> source, UUID primaryId) {

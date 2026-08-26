@@ -15,12 +15,12 @@ public final class AdminService implements AdminUseCase {
     }
     @Override public CompletionStage<List<ServiceAreaView>> serviceAreas(UUID adminId) {
         return RoleGuard.require(users,adminId,UserRole.ADMIN).thenCompose(ignored->areas.list())
-                .thenApply(values -> values.stream().map(value -> new ServiceAreaView(value.cityId(),
-                value.cityName(), value.departmentId(), value.departmentName(), value.enabled())).toList());
+                .thenApply(values -> values.stream().map(value -> new ServiceAreaView(
+                        value.municipalityCode(), value.enabled())).toList());
     }
-    @Override public CompletionStage<Void> setServiceArea(UUID adminId, UUID cityId, boolean enabled) {
+    @Override public CompletionStage<Void> setServiceArea(UUID adminId, String municipalityCode, boolean enabled) {
         return RoleGuard.require(users,adminId,UserRole.ADMIN)
-                .thenCompose(ignored->areas.setEnabled(cityId, enabled, adminId, clock.instant()));
+                .thenCompose(ignored->areas.setEnabled(municipalityCode, enabled, adminId, clock.instant()));
     }
     @Override public CompletionStage<Void> changeRole(UUID adminId, UUID userId, UserRole role) {
         return RoleGuard.require(users,adminId,UserRole.ADMIN).thenCompose(ignored->{

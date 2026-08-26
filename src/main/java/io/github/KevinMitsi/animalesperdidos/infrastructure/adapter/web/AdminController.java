@@ -11,24 +11,27 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.validation.annotation.Validated;
 import reactor.core.publisher.Mono;
 import java.util.*;
 
 @RestController @RequestMapping("/api/v1/admin") @RequiredArgsConstructor
+@Validated
 @SecurityRequirement(name="bearerAuth") @Tag(name="Administrator operations")
 public class AdminController {
     private final AdminUseCase administration; private final ReunionModerationUseCase reunions;
     private final AdminWebMapper adminMapper; private final ModerationWebMapper moderationMapper;
     private final AuthenticatedUserResolver authenticatedUser;
-    @GetMapping("/service-areas") @Operation(summary="List cities and their publication availability")
+    @GetMapping("/service-areas") @Operation(summary="List persisted municipality availability configurations")
     public Mono<List<ServiceAreaResponse>> serviceAreas(@AuthenticationPrincipal Jwt jwt){
         return Mono.fromCompletionStage(administration.serviceAreas(authenticatedUser.id(jwt))).map(adminMapper::toResponses);
     }
-    @PutMapping("/service-areas/{cityId}") @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary="Enable or disable a city without changing publication use cases")
-    public Mono<Void> setServiceArea(@AuthenticationPrincipal Jwt jwt,@PathVariable UUID cityId,
+    @PutMapping("/service-areas/{municipalityCode}") @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary="Enable or disable a municipality; municipalities are enabled by default")
+    public Mono<Void> setServiceArea(@AuthenticationPrincipal Jwt jwt,
+            @PathVariable @jakarta.validation.constraints.Pattern(regexp="^[0-9]{5}$") String municipalityCode,
             @Valid @RequestBody SetServiceAreaRequest request){
-        return Mono.fromCompletionStage(administration.setServiceArea(authenticatedUser.id(jwt),cityId,request.enabled()));
+        return Mono.fromCompletionStage(administration.setServiceArea(authenticatedUser.id(jwt),municipalityCode,request.enabled()));
     }
     @PutMapping("/users/{userId}/role") @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary="Assign USER, MODERATOR or ADMIN role")

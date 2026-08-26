@@ -1,6 +1,7 @@
 package io.github.KevinMitsi.animalesperdidos.application.port.in;
 
 import io.github.KevinMitsi.animalesperdidos.domain.model.Species;
+import io.github.KevinMitsi.animalesperdidos.domain.model.AdministrativeLocation;
 
 import java.time.Instant;
 import java.util.List;
@@ -13,7 +14,7 @@ public interface ReportLostPetUseCase {
 
     record Command(UUID ownerId, String petName, Species species, String description,
                    Instant disappearedAt, double latitude, double longitude,
-                   UUID neighborhoodId, List<String> imageKeys) {
+                   AdministrativeLocation administrativeLocation, List<String> imageKeys) {
         public Command {
             imageKeys = List.copyOf(imageKeys);
         }

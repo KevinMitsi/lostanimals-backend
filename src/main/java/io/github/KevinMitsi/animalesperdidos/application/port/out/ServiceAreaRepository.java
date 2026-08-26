@@ -5,8 +5,8 @@ import java.util.*;
 import java.util.concurrent.CompletionStage;
 
 public interface ServiceAreaRepository {
-    CompletionStage<Boolean> isNeighborhoodEnabled(UUID neighborhoodId);
+    CompletionStage<Boolean> isMunicipalityEnabled(String municipalityCode);
     CompletionStage<List<AreaEntry>> list();
-    CompletionStage<Void> setEnabled(UUID cityId, boolean enabled, UUID actorId, Instant now);
-    record AreaEntry(UUID cityId, String cityName, UUID departmentId, String departmentName, boolean enabled) { }
+    CompletionStage<Void> setEnabled(String municipalityCode, boolean enabled, UUID actorId, Instant now);
+    record AreaEntry(String municipalityCode, boolean enabled) { }
 }
